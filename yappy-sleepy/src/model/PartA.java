@@ -17,6 +17,9 @@ public class PartA {
 		Sleepy sleepyRunnable = new Sleepy();
 		
 		new Thread(sleepyRunnable).start();
+		
+//		th.start();
+		
 		yappyThread.start(); //initialize thread resources and run/execute thread
 		System.out.print("DONE");
 	}
