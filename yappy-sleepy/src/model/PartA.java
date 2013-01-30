@@ -1,3 +1,11 @@
+/*
+ * Basic Java thread concurrency  
+ * Two thread classes will both loop for the given number of times, and each time 
+ * through the loop, it will print out its one-letter name. 
+ * 
+ * Author: Osazuwa Omigie
+ */
+
 package model;
 
 public class PartA {
@@ -27,7 +35,7 @@ public class PartA {
 			while(1==1){
 				System.out.print("s");
 				try {
-					Thread.sleep(1000);
+					Thread.sleep(500);
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
