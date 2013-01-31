@@ -57,6 +57,8 @@ int main(int argc, char* argv[])
 	 *            priority,
 	 *            mode (FPU, start suspended, ...)
 	 */
+
+
 	rt_task_create(&demo_task, "trivial", 0, 99, 0);
 
 	/*
@@ -69,4 +71,6 @@ int main(int argc, char* argv[])
 	pause();
 
 	rt_task_delete(&demo_task);
+
+	return 0;
 }

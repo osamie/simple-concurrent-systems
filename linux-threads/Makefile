@@ -1,7 +1,9 @@
 ###### CONFIGURATION ######
 
 ### List of applications to be build
-APPLICATIONS = trivial-periodic sigxcpu rtprint
+APPLICATIONS = trivial-periodic 
+
+#sigdebug rtprint
 
 ### Note: to override the search path for the xeno-config script, use "make XENO=..."
 
@@ -32,13 +34,14 @@ endif
 
 CC=$(shell $(XENOCONFIG) --cc)
 
-CFLAGS=$(shell $(XENOCONFIG) --xeno-cflags) $(MY_CFLAGS)
+CPPFLAGS=$(shell $(XENOCONFIG) --skin=native --cflags) $(MY_CFLAGS)
 
-LDFLAGS=$(shell $(XENOCONFIG) --xeno-ldflags) $(MY_LDFLAGS) -lnative
+LDFLAGS=$(MY_LDFLAGS)
+LDLIBS=$(shell $(XENOCONFIG) --skin=native --ldflags)
 
 # This includes the library path of given Xenomai into the binary to make live
 # easier for beginners if Xenomai's libs are not in any default search path.
-LDFLAGS+=-Xlinker -rpath -Xlinker $(shell $(XENOCONFIG) --libdir)
+LOADLIBES+=-Xlinker -rpath -Xlinker $(shell $(XENOCONFIG) --libdir)
 
 all:: $(APPLICATIONS)
 
@@ -47,12 +50,6 @@ clean::
 
 endif
 endif
-
-
-
-###### SPECIAL TARGET RULES ######
-rtprint: rtprint.c
-	$(CC) $(CFLAGS) $? $(LDFLAGS) -lrtdk -o $@
 
 
 
@@ -66,8 +63,10 @@ OBJS     := ${patsubst %, %.o, $(MODULES)}
 CLEANMOD := ${patsubst %, .%*, $(MODULES)}
 PWD      := $(shell if [ "$$PWD" != "" ]; then echo $$PWD; else pwd; fi)
 
-### Kernel 2.6
-ifeq ($(findstring 2.6,$(KSRC)),2.6)
+### Kernel 2.6 or 3.0
+PATCHLEVEL:=$(shell sed 's/PATCHLEVEL = \(.*\)/\1/;t;d' $(KSRC)/Makefile)
+VERSION:=$(shell sed 's/VERSION = \(.*\)/\1/;t;d' $(KSRC)/Makefile)
+ifneq ($(VERSION).$(PATCHLEVEL),2.4)
 
 obj-m        := $(OBJS)
 EXTRA_CFLAGS := -I$(KSRC)/include/xenomai -I$(KSRC)/include/xenomai/posix $(ADD_CFLAGS)
@@ -91,7 +90,7 @@ modules:
 	@echo "$(CFLAGS)"
 
 clean::
-	$(RM) $(CLEANMOD) *.o *.ko *.mod.c Module*.symvers
+	$(RM) $(CLEANMOD) *.o *.ko *.mod.c Module*.symvers Module.markers modules.order
 	$(RM) -R .tmp*
 
 endif
