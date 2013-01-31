@@ -1,7 +1,9 @@
 ###### CONFIGURATION ######
 
 ### List of applications to be build
-APPLICATIONS = trivial-periodic 
+APPLICATIONS = partB
+
+#trivial-periodic 
 
 #sigdebug rtprint
 
