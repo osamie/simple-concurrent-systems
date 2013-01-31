@@ -18,8 +18,6 @@ public class PartA {
 		
 		new Thread(sleepyRunnable).start();
 		
-//		th.start();
-		
 		yappyThread.start(); //initialize thread resources and run/execute thread
 		System.out.print("DONE");
 	}
@@ -29,8 +27,6 @@ public class PartA {
 		partA.createThreads(); //create the sleepy and yappy threads
 	}
 	
-	
-	/*  Inner classes */
 	class Sleepy implements Runnable{
 		
 		@Override

@@ -1,5 +1,8 @@
-/**
- * 
+/* Basic Java thread concurrency
+ * The thread classes will now simply "log" its name, instead of the 
+ * expensive system call involved in printing to the console. 
+ * The log is a simple global variable shared by the two threads. 
+ * The parent thread would also wait for termination of the child threads
  */
 package model;
 
@@ -19,11 +22,14 @@ public class PartB {
 		Thread sleepyThread = new Thread(new Sleepy());
 		
 		try {
+			//initialize thread resources and run/execute thread
 			sleepyThread.start();	
-			yappyThread.start(); //initialize thread resources and run/execute thread
+			yappyThread.start(); 
 			
-			sleepyThread.join();  //waits for sleepy thread to terminate
-			yappyThread.join();  //waits for yappy thread to terminate
+			//Parent thread needs to wait for child threads to terminate
+			yappyThread.join();  
+			sleepyThread.join(); 
+			
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -31,7 +37,8 @@ public class PartB {
 	
 	public static void main(String[] args) {
 		PartB partB = new PartB();
-		partB.createThreads(); //create the sleepy and yappy threads
+		System.out.println("Running...");
+		partB.createThreads(); //create and execute the sleepy and yappy threads
 	
 		
 		System.out.print("Log: " + new String(log));
@@ -49,7 +56,6 @@ public class PartB {
 				try {
 					Thread.sleep(500);
 				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				i--;
@@ -64,7 +70,6 @@ public class PartB {
 			int i = 100;
 			while(i > 0){
 				log[logIndex++] = 'y'; //write to log file 
-
 				/*spin this thread*/
 				int var;
 				for(var=2;var<99999999;var++){
