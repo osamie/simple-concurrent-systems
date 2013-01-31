@@ -4,6 +4,22 @@
  * expensive system call involved in printing to the console. 
  * The log is a simple global variable shared by the two threads. 
  * The parent thread would also wait for termination of the child threads
+
+ 	OBSERVATIONS:
+ 	- Just as it was in partA.java,one of the child thread always prints to the console before
+ 	the parent. 
+ 	
+ 	- As usual, the first thread on which the start method is called, is always the 
+ 	first to run.
+ 	
+ 	-There was the problem of trying to access/index memory beyond bounds. This problem
+ 	occurred because parent that managed the shared memory, died while the children kept
+ 	running. So when these children attempt to access this shared memory from the parent, 
+ 	they get this error and the program is halted. In order to fix this issue, we join
+ 	the children thread with the parent. This means that the parent will wait for the child
+ 	thread to complete before termination or proceeding with its next instructions.    
+ 	
+ 	
  	Author: OSAZUWA OMIGIE
  */
 package model;
@@ -20,13 +36,13 @@ public class PartB {
 	public static int logIndex = 0;
 	
 	public void createThreads(){
-		Yappy yappyThread = new Yappy('y',15);
-		Thread sleepyThread = new Thread(new Sleepy('s',5));
+		Yappy yappyThread = new Yappy('y',30);
+		Thread sleepyThread = new Thread(new Sleepy('s',10));
 		
 		try {
 			//initialize thread resources and run/execute thread
-			sleepyThread.start();	
-			yappyThread.start(); 
+			yappyThread.start();
+			sleepyThread.start();	 
 			
 			//Parent thread needs to wait for child threads to terminate
 			yappyThread.join();  
@@ -41,8 +57,6 @@ public class PartB {
 		PartB partB = new PartB();
 		System.out.println("Running...");
 		partB.createThreads(); //create and execute the sleepy and yappy threads
-	
-		
 		System.out.println("Log: " + new String(log));
 	}
 	
@@ -90,7 +104,7 @@ public class PartB {
 				log[logIndex++] = output; //write to log file 
 				/*spin this thread*/
 				int var;
-				for(var=2;var<99999999;var++){
+				for(var=2;var<999999999;var++){
 					var *=1;
 					var /=1;
 				}
