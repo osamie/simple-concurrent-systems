@@ -1,5 +1,5 @@
 /* 
- * BASIC JAVA THREAD CONCURRENCY EXPERIMENT
+ * AVA THREAD CONCURRENCY EXPERIMENT
  * The thread classes will now simply "log" its name, instead of the 
  * expensive system call involved in printing to the console. 
  * The log is a simple global variable shared by the two threads. 
@@ -20,7 +20,7 @@
  	thread to complete before termination or proceeding with its next instructions.    
  	
  	
- 	Author: OSAZUWA OMIGIE
+ 	Author: OSAZUWA OMIGIE (100764733)
  */
 package model;
 

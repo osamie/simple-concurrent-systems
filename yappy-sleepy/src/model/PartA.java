@@ -1,5 +1,5 @@
 /*
- * BASIC JAVA THREAD CONCURRENCY EXPERIMENT  
+ * JAVA THREAD CONCURRENCY EXPERIMENT  
  * Two thread classes will both loop for the given number of times, and each time 
  * through the loop, it will print out its one-letter name. 
  * 
@@ -35,7 +35,7 @@
 During the yappy thread's spin time, the thread is been 'executed' or CPU bound (doing nothing).
 Since the I/O is not in use at this time, the other thread is able use I/O in printing (if it is not asleep).  
  
- Author: OSAZUWA OMIGIE
+ Author: OSAZUWA OMIGIE (100764733)
  */
 
 package model;
