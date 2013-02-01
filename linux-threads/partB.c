@@ -16,8 +16,6 @@
 RT_TASK yappy_task;
 RT_TASK sleepy_task;
 
-/* NOTE: error handling omitted. */
-
 
 typedef struct{
 	int count;
