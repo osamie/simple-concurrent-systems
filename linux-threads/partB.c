@@ -19,13 +19,20 @@ RT_TASK sleepy_task;
 /* NOTE: error handling omitted. */
 
 
+typedef struct{
+	int count;
+	char output;
+} Data;
+
 void yappy(void *arg){
 	while(1){
-		printf("y");
+		//TODO: error check instance type of arg
+		Data * data = (Data *) arg;
+		rt_printf("%c",data->output);
 
 		/*spin this thread*/
 		int var;
-		for(var=2;var<999999;var++){
+		for(var=2;var<data->count;var++){
 			var *=1;
 			var /=1;
 		}
@@ -34,16 +41,28 @@ void yappy(void *arg){
 
 void sleepy(void *arg){
 	while(1){
-		printf("s");
+//		 rtdm_printk("s");
 
-		rt_task_wait_period(NULL);
+		//TODO: error check instance type ofsleepTime arg
+		Data * data = (Data *) arg;
+		rt_printf("%c",data->output);
+		rt_task_sleep(data->count);
 	}
 
 }
 
+void cleanUp(){
+	rt_task_delete(&yappy_task);
+	rt_task_delete(&sleepy_task);
+}
+
 void catch_signal(int sig)
 {
+	cleanUp();
+	return;
 }
+
+
 
 int main(int argc, char* argv[])
 {
@@ -53,22 +72,27 @@ int main(int argc, char* argv[])
 	/* Avoids memory swapping for this program */
 	mlockall(MCL_CURRENT|MCL_FUTURE);
 
+	rt_print_auto_init(1);
 
-	rt_task_create(&yappy_task, "yappy", 0, 99, 0); //"new Thread()"
-	rt_task_create(&sleepy_task, "sleepy", 0, 99, 0); //"new Thread()"
 
-	/*
-	 * Arguments: &task,
-	 *            task function,
-	 *            function argument
-	 */
-	rt_task_start(&yappy_task, &yappy, NULL);  // "Thread.start()"
-	rt_task_start(&sleepy_task, &sleepy, NULL);  // "Thread.start()"
+	rt_task_create(&yappy_task, "yappy", 0, 0, 0); //"new Thread()"
+	rt_task_create(&sleepy_task, "sleepy", 0, 0, 0); //"new Thread()"
 
-//	pause();
+	rt_printf("DONE");
+	Data yappyData;
+	yappyData.output = 'y';
+	yappyData.count = 999999;
 
-	rt_task_delete(&yappy_task);
-	rt_task_delete(&sleepy_task);
+	Data sleepyData;
+	sleepyData.output = 's';
+	sleepyData.count = 1000000;
+
+	rt_task_start(&yappy_task, &yappy, &yappyData);  // "Thread.start()"
+	rt_task_start(&sleepy_task, &sleepy, &sleepyData);  // "Thread.start()"
+
+	pause();
+
+	cleanUp();
 
 	return 0;
 }
