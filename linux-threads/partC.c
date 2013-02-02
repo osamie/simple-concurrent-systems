@@ -1,8 +1,27 @@
 /*
  * CONCURRENCY EXPERIMENT WITH REAL TIME LINUX THREADS (XENOMAI)
  *
+ *	ANALYSIS:
+   	   The yappy thread ran first.
+
+	It is possible to use printf in main. However, printf uses linux syscalls and this
+	significantly slows down the real-time thread. The rt_printf is preferred because it is
+	a cheaper printing call (no syscalls or locks).
+
+   What was the pattern of the numbers printed out?
+   	   'yyyyyyyyyyyyyyyyyyyyyyyyysyyyysyyyysyy'. Unlike partB, yappy threads keeps outputting to the
+   	   console for a while before both threads eventually start interleaving.
+
+   Run your program several more times. Is the same thread always run first?
+   	   Yes, but the number of outputs are not consistent.
+
+   Run your program several more times, changing the sleep time and the spin time. What
+   changes do you see?
+	    Reducing the spin time causes the yappy thread to output to the console more frequently.
+		By increasing the sleep time, the sleepy thread prints to the console less frequently.
+
  *
- * Author: Osazuwa Omigie
+ * Author: OSAZUWA OMIGIE (100764733)
  */
 
 #include <stdio.h>
@@ -28,7 +47,7 @@ typedef struct{
 } Data;
 
 void yappyRun(void *arg){
-	while(log_index < MAX_OUTPUT){
+	while(log_index < (MAX_OUTPUT-1)){
 		Data * data = (Data *) arg;
 
 		log[log_index++] = data->output;
@@ -40,12 +59,10 @@ void yappyRun(void *arg){
 			var /=1;
 		}
 	}
-
-
 }
 
 void sleepyRun(void *arg){
-	while(log_index < MAX_OUTPUT){
+	while(log_index < (MAX_OUTPUT-1)){
 		Data * data = (Data *) arg;
 		log[log_index++] = data->output; //write to log variable
 		rt_task_sleep(data->count); //sleep
@@ -71,7 +88,6 @@ int main(int argc, char* argv[])
 	signal(SIGTERM, catch_signal);
 	signal(SIGINT, catch_signal);
 
-//	rt_printf("here");
 	rt_print_auto_init(1);
 
 	/* Avoids memory swapping for this program */
@@ -108,9 +124,11 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-
-	rt_task_join(&yappy_task); //wait for the child thread to terminate
+	//wait for the children thread to terminate
+	rt_task_join(&yappy_task);
 	rt_task_join(&sleepy_task);
+
+	log[MAX_OUTPUT] = '\0'; //null ending character
 
 	rt_printf("%s",log);
 

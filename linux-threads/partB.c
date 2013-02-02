@@ -1,8 +1,27 @@
 /*
  * CONCURRENCY EXPERIMENT WITH REAL TIME LINUX THREADS (XENOMAI)
  *
- *
- * Author: Osazuwa Omigie
+   ANALYSIS:
+   Run your program. What got printed out first?
+   	   The parent gets printed out first
+
+   Which of the two created threads ran first?
+   	   The yappy thread ran first.
+
+   What was the pattern of the numbers printed out?
+   	   'DONEyyyysssyssy' Parent, then yappy a few times, and then subsequent
+   	   outputs are interleaved between both child threads
+
+   Run your program several more times. Is the same thread always run first?
+   	   Yes, but the number of outputs are not consistent.
+
+   Run your program several more times, changing the sleep time and the spin time. What
+   changes do you see?
+	    Reducing the spin time causes the yappy thread to output to the console more frequently.
+		By increasing the sleep time, the sleepy thread prints to the console less frequently.
+
+
+  Author: OSAZUWA OMIGIE (100764733)
  */
 
 #include <stdio.h>
@@ -67,7 +86,6 @@ int main(int argc, char* argv[])
 
 	rt_print_auto_init(1);
 
-
 	if(rt_task_create(&yappy_task, "yappy", 0, 0, 0) == 0){}
 	else {
 		printf("error creating yappy thread");
@@ -82,11 +100,11 @@ int main(int argc, char* argv[])
 	rt_printf("DONE");
 	Data yappyData;
 	yappyData.output = 'y';
-	yappyData.count = 999999;
+	yappyData.count = 99999;  //set spin time for yappy thread
 
 	Data sleepyData;
 	sleepyData.output = 's';
-	sleepyData.count = 1000000;
+	sleepyData.count = 1000000;  //set sleep time for sleepy thread
 
 	if(rt_task_start(&yappy_task, &yappyRun, &yappyData)==0){}
 	else{
