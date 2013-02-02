@@ -16,8 +16,8 @@
 RT_TASK yappy_task;
 RT_TASK sleepy_task;
 
-#define MAX_OUTPUT 100
-//maximumOutput = 100;
+#define MAX_OUTPUT 1000
+
 static char log[MAX_OUTPUT]; //shared memory with child thread
 static int log_index = 0;
 
@@ -27,14 +27,13 @@ typedef struct{
 	char output;
 } Data;
 
-void yappy(void *arg){
+void yappyRun(void *arg){
 	while(log_index < MAX_OUTPUT){
-		//TODO: error check instance type of arg
 		Data * data = (Data *) arg;
-//		rt_printf("%c\n",data->output);
+
 		log[log_index++] = data->output;
 
-		/*spin this thread*/
+		/*spinning*/
 		int var;
 		for(var=2;var<data->count;var++){
 			var *=1;
@@ -45,14 +44,11 @@ void yappy(void *arg){
 
 }
 
-void sleepy(void *arg){
+void sleepyRun(void *arg){
 	while(log_index < MAX_OUTPUT){
-
-		//TODO: error check instance type ofsleepTime arg
 		Data * data = (Data *) arg;
-		log[log_index++] = data->output;
-//		rt_printf("%c\n",data->output);
-		rt_task_sleep(data->count);
+		log[log_index++] = data->output; //write to log variable
+		rt_task_sleep(data->count); //sleep
 	}
 
 }
@@ -82,27 +78,41 @@ int main(int argc, char* argv[])
 	mlockall(MCL_CURRENT|MCL_FUTURE);
 
 
+	if(rt_task_create(&yappy_task, NULL, 0, 0, T_JOINABLE)==0){
+	}else{
+		printf("error creating yappy thread");
+		return -1;
+	}
+	if(rt_task_create(&sleepy_task, "sleepy", 0, 0, T_JOINABLE)==0){}
+	else{
+		printf("error creating sleepy thread");
+		return -1;
+	}
+
 	Data yappyData;
-	yappyData.output = 'y';
-	yappyData.count = 100000;  //set the spin count
+		yappyData.output = 'y';
+		yappyData.count = 100000;  //set the spin count
 
-	Data sleepyData;
-	sleepyData.output = 's';
-	sleepyData.count = 1000000; //set the sleep time
+		Data sleepyData;
+		sleepyData.output = 's';
+		sleepyData.count = 1000000; //set the sleep time
 
-	rt_task_create(&yappy_task, NULL, 0, 0, T_JOINABLE); //"new Thread()"
-	rt_task_create(&sleepy_task, NULL, 0, 0, T_JOINABLE); //"new Thread()"
+	if(rt_task_start(&yappy_task, &yappyRun, &yappyData)==0){}
+	else{
+		printf("error starting yappy thread");
+		return -1;
+	}
+	if(rt_task_start(&sleepy_task, &sleepyRun, &sleepyData)==0){}
+	else {
+		printf("error starting sleepy thread");
+		return -1;
+	}
 
-	rt_task_start(&yappy_task, &yappy, &yappyData);  // "Thread.start()"
-	rt_task_start(&sleepy_task, &sleepy, &sleepyData);  // "Thread.start()"
 
 	rt_task_join(&yappy_task); //wait for the child thread to terminate
 	rt_task_join(&sleepy_task);
 
 	rt_printf("%s",log);
-//	pause();
-
-
 
 	return 0;
 }

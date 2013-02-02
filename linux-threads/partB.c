@@ -22,9 +22,8 @@ typedef struct{
 	char output;
 } Data;
 
-void yappy(void *arg){
+void yappyRun(void *arg){
 	while(1){
-		//TODO: error check instance type of arg
 		Data * data = (Data *) arg;
 		rt_printf("%c",data->output);
 
@@ -37,16 +36,12 @@ void yappy(void *arg){
 	}
 }
 
-void sleepy(void *arg){
+void sleepyRun(void *arg){
 	while(1){
-//		 rtdm_printk("s");
-
-		//TODO: error check instance type ofsleepTime arg
 		Data * data = (Data *) arg;
 		rt_printf("%c",data->output);
 		rt_task_sleep(data->count);
 	}
-
 }
 
 void cleanUp(){
@@ -73,8 +68,16 @@ int main(int argc, char* argv[])
 	rt_print_auto_init(1);
 
 
-	rt_task_create(&yappy_task, "yappy", 0, 0, 0); //"new Thread()"
-	rt_task_create(&sleepy_task, "sleepy", 0, 0, 0); //"new Thread()"
+	if(rt_task_create(&yappy_task, "yappy", 0, 0, 0) == 0){}
+	else {
+		printf("error creating yappy thread");
+		return -1;
+	}
+	if(rt_task_create(&sleepy_task, "sleepy", 0, 0, 0)==0){}
+	else{
+		printf("error creating sleepy thread");
+		return -1;
+	}
 
 	rt_printf("DONE");
 	Data yappyData;
@@ -85,8 +88,16 @@ int main(int argc, char* argv[])
 	sleepyData.output = 's';
 	sleepyData.count = 1000000;
 
-	rt_task_start(&yappy_task, &yappy, &yappyData);  // "Thread.start()"
-	rt_task_start(&sleepy_task, &sleepy, &sleepyData);  // "Thread.start()"
+	if(rt_task_start(&yappy_task, &yappyRun, &yappyData)==0){}
+	else{
+		printf("error starting yappy thread");
+		return -1;
+	}
+	if(rt_task_start(&sleepy_task, &sleepyRun, &sleepyData)==0){}
+	else {
+		printf("error starting sleepy thread");
+		return -1;
+	}
 
 	pause();
 
