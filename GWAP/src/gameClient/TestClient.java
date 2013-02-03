@@ -16,7 +16,7 @@ public class TestClient {
    {
       try {
          // Bind a socket to any available port on the local host machine. 
-    	 streamSocket = new Socket("127.0.0.1", 1234);
+    	 streamSocket = new Socket("127.0.0.1", 9999);
       } catch (UnknownHostException e1) {
           System.err.println("Don't know about host");
           System.exit(1);
@@ -50,7 +50,7 @@ public class TestClient {
    public void sendAndReceive(String s )
    {
       try {
-    	  out.println(s);
+//    	  out.println(s);
     	  System.out.println("Client Rxd: " + in.readLine());
       } catch (IOException e) { 
     	  System.err.println("Couldn't get I/O for the connection");
@@ -61,10 +61,11 @@ public class TestClient {
    public static void main(String args[])
    {
       TestClient c = new TestClient();
-      for (int i=0; i<10; i++)
-      {
+      
+//      for (int i=0; i<10; i++)
+//      {
     	  c.sendAndReceive("Is anyone there?");
-      }
+//      }
       c.close();
    }
 }
