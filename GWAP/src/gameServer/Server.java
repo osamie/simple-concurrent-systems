@@ -4,73 +4,73 @@ import gameModel.GameSession;
 
 import java.io.*;
 import java.net.*;
+import java.util.HashMap;
+
+import org.apache.commons.math3.random.RandomData;
+import org.apache.commons.math3.random.RandomDataImpl;
 
 public class Server {
 
    private ServerSocket serverSocket;
-   private final int LISTENING_PORT = 9999;
-   
+   public static final int HOST_LISTENING_PORT = 5555;
+   private RandomData randomizer;
+   HashMap<Integer,GameSession> sessionMap;
    Socket clientSocket;
    PrintWriter out;
    BufferedReader in;
-   
 
    public Server()
    {
-	   serverSocket = null;
+	   randomizer = new RandomDataImpl();
+	   sessionMap = new HashMap<Integer,GameSession>();
        try {
-           serverSocket = new ServerSocket(LISTENING_PORT);
+    	   //listen for new gameSession hosts
+           serverSocket = new ServerSocket(HOST_LISTENING_PORT);
        } catch (IOException e) {
            e.printStackTrace(System.err);
            System.exit(1);
        }
    }
 
-   public void startGame()
-   {
-	   byte[] receiveData = new byte[1024];
-	   byte[] sendData;
-	   
+   public void launchGameServer()
+   {   
 	   try {
-	       clientSocket = serverSocket.accept();
-	       GameSession gameSession = new GameSession(clientSocket);
-	       gameSession.start();
-	       gameSession.endSession();
-	       
-	       try {
-				Thread.sleep(1);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-//	       gameSession.endSession();
-	       
-//	       out = new PrintWriter(clientSocket.getOutputStream(), true);
-//	       in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-//
-//	       //while (!clientSocket.isOutputShutdown())  // isClosed(), isConnected(),isInputShutdown do not work
-//		   while ( (msg = in.readLine()) != null) 
-//		   {
-//			   System.out.println ("Server Rxd: " + msg );
-//			   out.println("Echo " + msg);
-//		   }
-//
-//		   in.close();
-//		   out.close();
-//		   clientSocket.close();
-		   serverSocket.close();
-      
+		   while (!serverSocket.isClosed()){
+			 //wait for game host connection 
+		       clientSocket = serverSocket.accept(); 
+		       Integer gameID = randomizer.nextInt(0, 999999);
+		       
+		       while(sessionMap.containsKey(gameID)){
+		    	 //keep generating gameIDs until a unique ID not in the gameSessionMap has been found
+		    	   gameID = randomizer.nextInt(0, 999999);
+		       }
+		       
+		       //create a new gameSession with the generated gameID
+		       GameSession session = new GameSession(clientSocket,this,gameID);
+		       
+		       //add <gameID,session> pair to the gameSessionMap
+		       sessionMap.put(gameID, session);
+		       session.start();
+		   }
+		   
 	   } catch (SocketException e2) { System.out.println("Done"); System.exit(0); }
 	   catch (IOException e) { e.printStackTrace(System.err); System.exit(1);  }
 	     
    }
    public void finalize()
    {
-	   try { serverSocket.close(); } catch (IOException e) {}
+	   System.out.println("CLOSING!");
+	   try { 
+		   serverSocket.close(); 
+		   clientSocket.close();
+	   } catch (IOException e) {
+		   
+	   }
    }
 
    public static void main( String args[] )
    {
       Server c = new Server();
-      c.startGame();
+      c.launchGameServer();
    }
 }

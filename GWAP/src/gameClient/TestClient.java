@@ -3,6 +3,8 @@ package gameClient;
 //    TCP Version 
 // @version CS January 2009
 
+import gameServer.Server;
+
 import java.io.*;
 import java.net.*;
 
@@ -16,12 +18,12 @@ public class TestClient {
    {
       try {
          // Bind a socket to any available port on the local host machine. 
-    	 streamSocket = new Socket("127.0.0.1", 9999);
+    	 streamSocket = new Socket("127.0.0.1", Server.HOST_LISTENING_PORT);
       } catch (UnknownHostException e1) {
           System.err.println("Don't know about host");
           System.exit(1);
      } catch (IOException e2) {
-          System.err.println("Couldn't get port 5000");
+          System.err.println("Couldn't get port "+Server.HOST_LISTENING_PORT);
           System.exit(1);
      } 
      try {
@@ -65,6 +67,7 @@ public class TestClient {
 //      for (int i=0; i<10; i++)
 //      {
     	  c.sendAndReceive("Is anyone there?");
+    	  System.out.println("DONE");
 //      }
       c.close();
    }
