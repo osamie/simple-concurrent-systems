@@ -13,7 +13,8 @@ public class Server {
 
    private ServerSocket serverSocket;
    public static final int HOST_LISTENING_PORT = 5555;
-   private RandomData randomizer;
+   
+//   private RandomData randomizer;
    HashMap<Integer,GameSession> sessionMap;
    Socket clientSocket;
    PrintWriter out;
@@ -21,7 +22,7 @@ public class Server {
 
    public Server()
    {
-	   randomizer = new RandomDataImpl();
+//	   randomizer = new RandomDataImpl();
 	   sessionMap = new HashMap<Integer,GameSession>();
        try {
     	   //listen for new gameSession hosts
@@ -35,23 +36,30 @@ public class Server {
    public void launchGameServer()
    {   
 	   try {
-		   while (!serverSocket.isClosed()){
-			 //wait for game host connection 
-		       clientSocket = serverSocket.accept(); 
-		       Integer gameID = randomizer.nextInt(0, 999999);
+		   PrintWriter out;
+		   Socket copySocket;
+		   while (true){
+			  //wait for an initial connection from host client 
+			   clientSocket = serverSocket.accept();
+			   System.out.println("connected "+clientSocket.getPort());
+//		       Integer gameID = randomizer.nextInt(0, 999999);
 		       
-		       while(sessionMap.containsKey(gameID)){
-		    	 //keep generating gameIDs until a unique ID not in the gameSessionMap has been found
-		    	   gameID = randomizer.nextInt(0, 999999);
+		       copySocket = clientSocket;
+		       out = new PrintWriter(copySocket.getOutputStream(),true);
+		       
+		       System.out.println("connected "+clientSocket.getPort());
+		       for(int i =0;i<99;i++){
+		    	   out.println("connected "+clientSocket.getPort());
 		       }
 		       
 		       //create a new gameSession with the generated gameID
-		       GameSession session = new GameSession(clientSocket,this,gameID);
+		       GameSession session = new GameSession(clientSocket,this);
 		       
 		       //add <gameID,session> pair to the gameSessionMap
-		       sessionMap.put(gameID, session);
+		       sessionMap.put(session.getGameID(), session);
 		       session.start();
 		   }
+//		   System.out.println("here");
 		   
 	   } catch (SocketException e2) { System.out.println("Done"); System.exit(0); }
 	   catch (IOException e) { e.printStackTrace(System.err); System.exit(1);  }

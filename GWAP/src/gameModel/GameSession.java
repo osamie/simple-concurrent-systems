@@ -18,22 +18,25 @@ public class GameSession extends Thread {
 	private Socket gameHostSocket;   //game host's socket
 	private Server mainServer;
 	private Vector<Socket> connectedClientSockets;
-	private long gameID;
+	private int gameID;
+	PrintWriter outToClient;
 	
-	public GameSession(Socket hostClientSocket,Server server,long id){
+	public GameSession(Socket hostClientSocket,Server server){
+		gameHostSocket = hostClientSocket;
 		mainServer = server;
-		gameID = id;
 		connectedClientSockets = new Vector<Socket>();
 		
+		
 		try{
-			sessionSocket = new ServerSocket(0);
-			joinGame(hostClientSocket); //join game
-			System.out.println("started new session");
+			sessionSocket = new ServerSocket(0);//create a session socket with any available port
+			gameID = sessionSocket.getLocalPort(); //gameID is the port local port number of the session
 		}catch(IOException e){
 			System.out.println("problem creating session socket!");
 		}
-		
-		
+	}
+	
+	public Integer getGameID(){
+		return gameID;
 	}
 	
 	/**
@@ -42,15 +45,26 @@ public class GameSession extends Thread {
 	public void joinGame(Socket clientSocket){
 		//add socket to collection of connected clientSockets
 		connectedClientSockets.add(clientSocket);
+			String msg = "You are now connected to gameSessionID:"+gameID;
+			sendMsgToSocket(msg, clientSocket);		
+		System.out.println("added new client to sessionID:" + gameID);
+	}
+	
+	/**
+	 * send a message to a given client
+	 * @param message
+	 * @param client
+	 */
+	public void sendMsgToSocket(String message,Socket client){
+		Socket clientSocket = client;
 		try {
-			PrintWriter outToGuest = new PrintWriter(clientSocket.getOutputStream(),true);
-			outToGuest.write("You are now connected to gameSessionID:"+gameID);
+			PrintWriter outToClient = new PrintWriter(clientSocket.getOutputStream(),true);
+			outToClient.println(message);
+			System.out.println("sent message");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-		
-		System.out.println("added new client to sessionID:" + gameID);
+		}	
 	}
 	
 	
@@ -74,9 +88,12 @@ public class GameSession extends Thread {
 	
 	@Override
 	public void run() {
-		while(connectedClientSockets.size()>0){
+		joinGame(gameHostSocket); //add host client to game
+		sendMsgToSocket("game session port:"+sessionSocket.getLocalPort(), gameHostSocket);
+		while(connectedClientSockets.size()>0){ 
+			//there is at least one client in the game session
 			try {
-				Socket newGuest = sessionSocket.accept();
+				Socket newGuest = sessionSocket.accept(); //accept more guests
 				joinGame(newGuest);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
