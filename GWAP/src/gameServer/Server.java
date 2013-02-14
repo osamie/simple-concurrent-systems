@@ -1,73 +1,71 @@
 package gameServer;
 
+
+
 import gameModel.GameSession;
 
 import java.io.*;
 import java.net.*;
 import java.util.HashMap;
-
-import org.apache.commons.math3.random.RandomData;
-import org.apache.commons.math3.random.RandomDataImpl;
+import java.util.Random;
 
 public class Server {
 
-   private ServerSocket serverSocket;
-   public static final int HOST_LISTENING_PORT = 5555;
-   
-//   private RandomData randomizer;
-   HashMap<Integer,GameSession> sessionMap;
+   private ServerSocket serverSocket;   
    Socket clientSocket;
    PrintWriter out;
    BufferedReader in;
-
-   public Server()
+   HashMap<Integer,GameSession> sessionMap;
+   
+   private static String [] dictionary = 
+	   {"whatever","house","game","love","kitchen",
+	   "hat","skyfall","employment","cosmetics",
+	   "lovers","bottle","hat-trick","skyfalling"}; 
+   
+   public Server(int portNum)
    {
-//	   randomizer = new RandomDataImpl();
 	   sessionMap = new HashMap<Integer,GameSession>();
        try {
     	   //listen for new gameSession hosts
-           serverSocket = new ServerSocket(HOST_LISTENING_PORT);
+           serverSocket = new ServerSocket(portNum);
        } catch (IOException e) {
            e.printStackTrace(System.err);
            System.exit(1);
        }
    }
-
+   
+   
+   /**
+    * 
+    * @return random word from the dictionary	
+    */
+   public String getAword(){
+	   Random generator = new Random();
+	   return dictionary[generator.nextInt(dictionary.length)];
+   }
+   
+   public synchronized void addToMap(Integer gameID,GameSession session){
+	 //add <gameID,session> pair to the gameSessionMap
+       sessionMap.put(session.getGameID(), session);
+   }
+   
    public void launchGameServer()
    {   
 	   try {
-		   PrintWriter out;
-		   Socket copySocket;
 		   while (true){
 			  //wait for an initial connection from host client 
 			   clientSocket = serverSocket.accept();
-			   System.out.println("connected "+clientSocket.getPort());
-//		       Integer gameID = randomizer.nextInt(0, 999999);
-		       
-		       copySocket = clientSocket;
-		       out = new PrintWriter(copySocket.getOutputStream(),true);
-		       
-		       System.out.println("connected "+clientSocket.getPort());
-		       for(int i =0;i<99;i++){
-		    	   out.println("connected "+clientSocket.getPort());
-		       }
-		       
-		       //create a new gameSession with the generated gameID
-		       GameSession session = new GameSession(clientSocket,this);
-		       
-		       //add <gameID,session> pair to the gameSessionMap
-		       sessionMap.put(session.getGameID(), session);
-		       session.start();
+			   new ServerWorker(clientSocket,this).start();  
 		   }
-//		   System.out.println("here");
-		   
+	   
 	   } catch (SocketException e2) { System.out.println("Done"); System.exit(0); }
 	   catch (IOException e) { e.printStackTrace(System.err); System.exit(1);  }
 	     
    }
+   
+   @Override
    public void finalize()
    {
-	   System.out.println("CLOSING!");
 	   try { 
 		   serverSocket.close(); 
 		   clientSocket.close();
@@ -75,10 +73,21 @@ public class Server {
 		   
 	   }
    }
+   
+   /**
+    * display server usage on the console
+    */
+   public static void help(){
+	   System.out.println("\nInvalid port number \nUSAGE:\n\tjava gameServer.Server <server-port#> \n\te.g java gameServer.Server 5000");
+   }
 
    public static void main( String args[] )
    {
-      Server c = new Server();
+	  if(args.length < 1){
+	    	  help();
+	    	  return;
+	  } 
+      Server c = new Server(Integer.parseInt(args[0]));
       c.launchGameServer();
    }
 }
