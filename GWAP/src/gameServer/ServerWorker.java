@@ -44,10 +44,9 @@ public class ServerWorker extends Thread{
 				   
 				   
 				   //TODO add more features like view existing sessions
-				   out.println("connected as "+clientSocket.getPort());
-			       out.println("What would you like to do? \n " +
-			       		"To create a new session enter 'host' \n" +
-			       		"To join any existing sessions enter 'join' \n");
+//				   out.println("connected as "+clientSocket.getPort());
+//			       out.println("What would you like to do? \n To create a new session enter 'host' \n" +
+//			       		"To join any existing sessions enter 'join' \n");
 			       
 			       String message = in.readLine();
 			       optionsStage = processClientInput(message);
@@ -64,7 +63,9 @@ public class ServerWorker extends Thread{
 	 * @return true if the client is still at the menu stage
 	 */
 	private boolean processClientInput(String message) {
+		
 		if(message==null) return false;
+		
 		String [] messageParam = message.split(" ");
 		
 		if (messageParam.length < 1) {
@@ -72,11 +73,16 @@ public class ServerWorker extends Thread{
 			return true;
 		}
 		if(messageParam[0].equals("@join")){
+			
+			
 			//if the specific session was requested
 			if(messageParam.length > 1){
 				//TODO search for a game session with id messageParam[1]
 				//add client to the gameSession
+				out.println("@join received");
 			}
+			out.println("@join received");
+			
 			
 			//join client with a random game session
 			//TODO determine a game session or let the user decide via the message 
@@ -92,9 +98,13 @@ public class ServerWorker extends Thread{
 	       mainServer.addToMap(session.getGameID(), session);
 	       
 	       session.start();
+	       
+	       out.println("@host received");
 	       return false;
 		}
 		else{
+			System.out.println(messageParam[0]);
+			out.println("not understood");
 			return true;
 		}
 		

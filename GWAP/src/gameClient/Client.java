@@ -88,13 +88,23 @@ public class Client {
    }
    
    public void start(){
-	   System.out.println("here");
+	   System.out.println("Connected to server");
+	   
+	   /**
+	    * perform setup here
+	    */
+	   System.out.println("What would you like to do? \n " +
+	   		"To create a new session enter 'host' \n" +
+	       	"To join any existing sessions enter 'join' \n");
+	   
+	   
 	   while(streamSocket.isBound()){
 		   
 	          try {
+	        	    System.out.print("Type: ");
 	    			String str = clientConsole.readLine();
 	    			//process input here
-	    			if(str.equals("exit") || (str.equals("quit"))){
+	    			if(str.equals("#exit") || (str.equals("#quit"))){
 	    				   close();
 	    				   return;
 	    			 }
@@ -111,17 +121,27 @@ public class Client {
     * @param str
     */
    public void processInput(String str){
-	   if(str.equals("help")){
+	   if (str == null) return;
+	   
+	   if(str.equals("#help")){
 		   help();
 	   }
-	   else if(str.equals("0")){
-		   System.out.print("open menu");
-	   }
-	   else if(str.equals("2")){
-		   System.out.print("open menu");
+	   else if(str.startsWith("@")){
+		   //utility message to server
+		   /*
+		    * join, host
+		    * 
+		    */
+		out.println(str);
+		try {
+			   //wait for reply from server 
+			System.out.println(in.readLine());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	   }
 	   else{
-		   help();
+		   out.println(str);
 	   }
 	   
    }
