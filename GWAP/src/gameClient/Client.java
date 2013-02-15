@@ -103,24 +103,51 @@ public class Client {
 		   help();
 	   }
 	   else if(str.startsWith("@")){
+		   //other utility commands
 		   
-		//check if the command is supported
-		if(!adminMessages.contains(str)){
-			System.out.println("invalid @ command");
-			return;
-		}
-		
-		out.println(str);
-		try {
-			//wait for reply from server 
-			System.out.println(in.readLine());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		   if(str.contains("@join")){
+			   out.println(str);
+			   try {
+					//wait for reply from server 
+					System.out.println(in.readLine());
+			   } catch (IOException e) {
+					e.printStackTrace();
+			   }
+		   }
+		   else if(str.contains("@list")){
+			   out.println(str);
+			   try {
+					//wait for reply from server 
+					System.out.println(in.readLine());
+			   } catch (IOException e) {
+					e.printStackTrace();
+			   }
+				
+		   }
+		   else if(str.contains("@host")){
+			   out.println(str);
+			   try {
+					//wait for reply from server 
+					System.out.println(in.readLine());
+			   } catch (IOException e) {
+					e.printStackTrace();
+			   }
+				
+		   }
+		   else{
+			   //invalid utility command
+			   System.out.println("invalid '@' command");
+			   help();
+			   return;
+		   }
 	   }
 	   else{
 		   out.println(str);
 	   }
+		  
+	
+		
+		
    }
    
    /**

@@ -115,7 +115,8 @@ public class ServerWorker extends Thread{
 	       
 	       session.start();
 	       
-	       out.println("New game session:"+ session.getGameID());
+	       //inform client of new game session
+	       out.println("New game session:"+ session.getGameID()); 
 	       return false;
 		}
 		

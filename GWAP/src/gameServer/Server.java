@@ -121,14 +121,6 @@ public class Server {
     * @return
     */
 	public GameSession getGameSession(Integer sessionID) {
-		Iterator<Entry<Integer, GameSession>> iterator = sessionMap.entrySet().iterator();
-		
-		while(iterator.hasNext()){
-			Map.Entry<Integer, GameSession> pairs = (Map.Entry<Integer, GameSession>)iterator.next();
-			if(pairs.getKey() == sessionID){
-				return pairs.getValue();
-			}
-		}
-		return null;
+		return sessionMap.get(sessionID);
 	}
 }
