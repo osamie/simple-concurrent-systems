@@ -12,6 +12,7 @@ import java.net.SocketException;
 /**
  * 
  *Handles 'host' or 'join' request from client
+ *This thread will be killed once a client has selected join or host option 
  */
 public class ServerWorker extends Thread{
 	Socket clientSocket;
@@ -37,21 +38,12 @@ public class ServerWorker extends Thread{
 	@Override
 	public void run() {
 		try {
-			   
 			   boolean optionsStage = true; 
-			   while ((optionsStage)&&(clientSocket.isConnected())){ 
-				   
-				   
-				   //TODO add more features like view existing sessions
-//				   out.println("connected as "+clientSocket.getPort());
-//			       out.println("What would you like to do? \n To create a new session enter 'host' \n" +
-//			       		"To join any existing sessions enter 'join' \n");
-			       
+			   while ((optionsStage)&&(clientSocket.isConnected())){
 			       String message = in.readLine();
 			       optionsStage = processClientInput(message);
 			   }
-
-			   
+  
 		   } catch (SocketException e2) { System.out.println("Done"); System.exit(0); }
 		   catch (IOException e) { e.printStackTrace(System.err); System.exit(1);  }
 	}
@@ -92,7 +84,6 @@ public class ServerWorker extends Thread{
 				System.out.println(session.getGameID());
 				session.joinGame(clientSocket); 
 				//add client to the gameSession
-				out.println("@join received");
 				return false;
 			}
 			else{
@@ -113,10 +104,9 @@ public class ServerWorker extends Thread{
 	       //add <gameID,session> pair to the server's gameSessionMap
 	       mainServer.addToMap(session.getGameID(), session);
 	       
-	       session.start();
+	       session.start();//start the game thread
+	       session.joinGame(clientSocket);//add itself to the session
 	       
-	       //inform client of new game session
-	       out.println("New game session:"+ session.getGameID()); 
 	       return false;
 		}
 		

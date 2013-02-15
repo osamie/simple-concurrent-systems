@@ -51,14 +51,31 @@ public class GameSession extends Thread {
 		return gameID;
 	}
 	
+	/**
+	 * sends a given string to all connect clients
+	 * @param message
+	 */
+	public void broadCastMessage(String message){
+		for (Socket s : connectedClientSockets){
+			sendMsgToSocket(message, s);
+		}
+	}
 	
+	/**
+	 * Contains the main game logic.
+	 * Once this method is called, no more clients can be added to the session 
+	 */
 	public void startGame(){
-		System.out.println("game started!");
+		System.out.println("Game started!");
 		
 		//initialize the results map
 		resultsMap = new HashMap<String, Vector<String>>(connectedClientSockets.size());
 		
-		int count = 4;
+		/*
+		 * the number of word challenges/rounds
+		 * TODO: this could be defined by the game host 
+		 */
+		int count = 3;
 		while(count > 0){
 			String word = gameServer.getAword();
 			//get a random word (results does not contain)
@@ -67,12 +84,8 @@ public class GameSession extends Thread {
 				word = gameServer.getAword();
 			}
 			
-			Vector<String> results = new Vector<String>();
-	//		results.put(word, value)
-			//broadcast random word to clients
-			for (Socket s : connectedClientSockets){
-				sendMsgToSocket(word, s);
-			}
+			Vector<String> results = new Vector<String>(connectedClientSockets.size());
+			broadCastMessage(word);
 			
 			try {
 				Thread.sleep(4000);  //timer or wait for clients to reply their entries
@@ -88,10 +101,22 @@ public class GameSession extends Thread {
 			
 			//store result in resultsMap
 			resultsMap.put(word, results);
+			count--;
 		}
+		
+		printResult();
 		
 	}
 	
+	/**
+	 * Prints the results of the game
+	 */
+	private void printResult() {
+		System.out.println(resultsMap.toString());
+	}
+
+
+
 	/**
 	 * adds a client to the gameSession
 	 */
@@ -101,12 +126,16 @@ public class GameSession extends Thread {
 		connectedClientSockets.add(clientSocket);
 		
 		//spawn a new thread that would listen to this client's requests
-		clientListeners.add(new ClientListener(clientSocket));
+		ClientListener listener = new ClientListener(clientSocket);
 		
-//		String msg = "You are now connected to gameSessionID:"+gameID;
-//		sendMsgToSocket(msg, clientSocket);		
-//		System.out.println("added new client to sessionID:" + gameID);
-		System.out.println("random word:"+gameServer.getAword());
+		
+		//Will be used by session to get answers from client
+		clientListeners.add(listener); 
+		
+		listener.start();
+		
+		String message = String.format("(Session id: %d)Waiting for other players...", this.gameID);
+		sendMsgToSocket(message, clientSocket);
 	}
 	
 	/**
@@ -148,20 +177,21 @@ public class GameSession extends Thread {
 	
 	@Override
 	public void run() {
-		joinGame(gameHostSocket); //add host client to game
+//		joinGame(gameHostSocket); //add host client to game
 //		sendMsgToSocket("waiting for players...", s);
 		
 		
 //		sendMsgToSocket("game session port: "+sessionSocket.getLocalPort(), gameHostSocket);
 		
+		//waiting for the required number of players 
 		while(connectedClientSockets.size() <= MIN_PLAYERS){ 
-			Thread.yield(); //keep waiting for other players to join
+			Thread.yield(); //give way to other threads in the meanwhile 
 		}
 		
-		//players are ready, now start game
+		//players are ready, now the start game
 		startGame();
 		
-		System.out.println("GAME OVER");//print result
+		System.out.println("GAME OVER");//TODO print result
 		
 	}
 }
@@ -173,7 +203,7 @@ public class GameSession extends Thread {
 class ClientListener extends Thread{
 	Socket clientSocket;
 //	GameSession gameSession;
-	private String answer="";
+	private String answer=" ";
 	BufferedReader inFromClient;
 	
 	public ClientListener(Socket socket) {
@@ -195,12 +225,15 @@ class ClientListener extends Thread{
 	
 	
 	/**
-	 * expects only answers to questions for now
+	 * Listens for answers from clients 
+	 * new answers will overwrite the answer variable. Only 1 answer per question
 	 */
 	public void listenForWords(){
 		
 		try {
-			answer = inFromClient.readLine();
+			//wait for answer from client
+			answer = inFromClient.readLine(); 
+			System.out.println("answer read:" + answer);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

@@ -84,7 +84,7 @@ public class Client {
 	    				   close();
 	    				   return;
 	    			 }
-	    			processInput(str);
+	    			validateConsoleInput(str);
 	    		} catch (IOException e) {
 	    			System.err.println("I/O exception. Cause: " + e.getCause());
 	    			continue;
@@ -92,11 +92,14 @@ public class Client {
 	      }
    }
    
+//   private boolean process
+   
+   
    /**
-    * Processed user input from the console 
+    * validates user's console input before sending to server 
     * @param str
     */
-   public void processInput(String str){
+   public void validateConsoleInput(String str){
 	   if (str == null) return;
 	   
 	   if(str.equals("#help")){
@@ -106,12 +109,27 @@ public class Client {
 		   //other utility commands
 		   
 		   if(str.contains("@join")){
-			   out.println(str);
-			   try {
-					//wait for reply from server 
-					System.out.println(in.readLine());
-			   } catch (IOException e) {
-					e.printStackTrace();
+			   String[] command = str.split(" ");
+			   
+			   if(command.length < 2){
+				   System.out.println("Please specify game session ID. \nUSAGE:@join <sessionID> \ntype '@list' to list current sessions");
+				   return;
+			   }
+			   else{
+				   out.println(str);
+				   try {
+					   //error check acknowledgment messages
+					   
+						//join acknowledgment from server 
+						System.out.println(in.readLine());
+						
+						//game start message from server
+						System.out.println(in.readLine());
+						
+						gameStarted();		
+				   } catch (IOException e) {
+						e.printStackTrace();
+				   }
 			   }
 		   }
 		   else if(str.contains("@list")){
@@ -127,8 +145,15 @@ public class Client {
 		   else if(str.contains("@host")){
 			   out.println(str);
 			   try {
-					//wait for reply from server 
+				   	//error check acknowledgment messages
+				   
+					//join acknowledgment from server 
 					System.out.println(in.readLine());
+					
+					//game start message from server
+					System.out.println(in.readLine());
+					
+					gameStarted();		
 			   } catch (IOException e) {
 					e.printStackTrace();
 			   }
@@ -151,6 +176,38 @@ public class Client {
    }
    
    /**
+    * called after getting gameStarted ack from session 
+    */
+   private void gameStarted() {
+	   //keep reading inputs from the 
+	   
+	   while(!streamSocket.isClosed()){
+		  
+		   try {
+			   //keep processing message from server until process() returns false
+			   //
+			   
+			   //get word from server
+			   System.out.println("\n***New Challenge:***" + in.readLine());
+			   
+			   
+			   //read user entry from console and send as response
+			   out.println(clientConsole.readLine());
+			   
+//			   System.out.println("");
+			   
+		   } catch (IOException e) {
+			   // TODO Auto-generated catch block
+			   e.printStackTrace();
+		   }
+		   
+		   //wait for clients reply
+
+	   }
+	
+   }
+
+/**
     * display client usage on the console
     */
    public static void help(){
@@ -162,16 +219,10 @@ public class Client {
 	   System.out.println("3 - join a game session. This should be followed by the game's sessionID");
    }
    public static void main(String args[])
-   {
-	   /*
-	    * You can connect directly to a port (a host_game port or an existing game session port)
-	    * OR
-	    * 
-	    */
-	   
-	  Client c;
+   { 
+	 
       if(args.length > 0){
-    	  c = new Client(Integer.parseInt(args[0]));
+    	  Client c = new Client(Integer.parseInt(args[0]));
     	  c.start();
           c.close();
     	  return;
