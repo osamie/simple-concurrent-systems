@@ -6,7 +6,11 @@ import gameModel.GameSession;
 
 import java.io.*;
 import java.net.*;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 
 public class Server {
@@ -15,7 +19,7 @@ public class Server {
    Socket clientSocket;
    PrintWriter out;
    BufferedReader in;
-   HashMap<Integer,GameSession> sessionMap;
+   public HashMap<Integer,GameSession> sessionMap;
    
    private static String [] dictionary = 
 	   {"whatever","house","game","love","kitchen",
@@ -36,6 +40,26 @@ public class Server {
    
    
    /**
+    * Iterates through the map of game sessions and returns a string
+    * of all game session IDs
+    * @return a string of sessionIDs separated by new lines
+    */
+   public String listGameSessions() {
+	  StringBuilder str = new StringBuilder();
+	  
+	  Iterator<Entry<Integer, GameSession>> iterator = sessionMap.entrySet().iterator();
+		
+	  while(iterator.hasNext()){
+		  Map.Entry<Integer, GameSession> pairs = (Map.Entry<Integer, GameSession>)iterator.next();
+			str.append(pairs.getKey() + ",");
+	  }
+	  
+	  if (str.length() == 0) str.append("No game sessions");
+	  return str.toString();
+   }
+   
+   
+   /**
     * 
     * @return random word from the dictionary	
     */
@@ -46,7 +70,7 @@ public class Server {
    
    public synchronized void addToMap(Integer gameID,GameSession session){
 	 //add <gameID,session> pair to the gameSessionMap
-       sessionMap.put(session.getGameID(), session);
+       sessionMap.put(gameID, session);
    }
    
    public void launchGameServer()
@@ -90,4 +114,21 @@ public class Server {
       Server c = new Server(Integer.parseInt(args[0]));
       c.launchGameServer();
    }
+
+   /**
+    * returns a specific game session
+    * @param sessionID
+    * @return
+    */
+	public GameSession getGameSession(Integer sessionID) {
+		Iterator<Entry<Integer, GameSession>> iterator = sessionMap.entrySet().iterator();
+		
+		while(iterator.hasNext()){
+			Map.Entry<Integer, GameSession> pairs = (Map.Entry<Integer, GameSession>)iterator.next();
+			if(pairs.getKey() == sessionID){
+				return pairs.getValue();
+			}
+		}
+		return null;
+	}
 }

@@ -7,6 +7,7 @@ import gameServer.Server;
 
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
 
 public class Client {
 
@@ -15,6 +16,7 @@ public class Client {
    private PrintWriter out;
    private InputStreamReader converter;
    private BufferedReader clientConsole;
+   private ArrayList<String> adminMessages; 
 
    /**
     * Clients hosting a game session
@@ -22,38 +24,12 @@ public class Client {
     */
    public Client(int port)
    {
-         init(port);  	 
-   }
-   
-   /**
-    * Clients joining a random game session 
-    */
-   public Client(){
-//	  //prompt user to join or host a game
-//	  System.out.println("Enter 'join' to list game sessions");
-//	
-//      InputStreamReader converter = new InputStreamReader(System.in);
-//      BufferedReader clientConsole = new BufferedReader(converter);
-//      int portNum = 0;
-//      
-//      try {
-//			String str = clientConsole.readLine();
-//			//process input here
-//			if(str.equals("exit") || (str.equals("quit"))){
-//				   close();
-//				   return;
-//			 }
-//			
-//			else if(str.equals("host")){
-//				System.out.print("Enter port number:");
-//				init(Integer.parseInt(clientConsole.readLine()));
-//			}
-//		} catch (IOException e) {
-//			System.err.println("I/O exception. Cause: " + e.getCause());
-//		}
-//      
-//      	init(port);
-      
+	   int numberOfCommands = 3;
+	   adminMessages = new ArrayList<String>(numberOfCommands);
+       adminMessages.add("@list");
+       adminMessages.add("@join");
+       adminMessages.add("@host");
+	   init(port);
    }
    
    private void init(int port){
@@ -127,14 +103,16 @@ public class Client {
 		   help();
 	   }
 	   else if(str.startsWith("@")){
-		   //utility message to server
-		   /*
-		    * join, host
-		    * 
-		    */
+		   
+		//check if the command is supported
+		if(!adminMessages.contains(str)){
+			System.out.println("invalid @ command");
+			return;
+		}
+		
 		out.println(str);
 		try {
-			   //wait for reply from server 
+			//wait for reply from server 
 			System.out.println(in.readLine());
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -143,7 +121,6 @@ public class Client {
 	   else{
 		   out.println(str);
 	   }
-	   
    }
    
    /**

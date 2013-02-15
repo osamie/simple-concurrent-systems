@@ -23,8 +23,9 @@ public class GameSession extends Thread {
 	private int gameID,currentQIndex;
 	private static final int MIN_PLAYERS = 2; //maximum number of players per game
 	private ArrayList<ClientListener> clientListeners;
+	PrintWriter outToClient;
 	
-	private PrintWriter outToClient;
+//	private PrintWriter outToClient;
 	
 	
 	Vector<String> currentQuestion;
@@ -52,6 +53,8 @@ public class GameSession extends Thread {
 	
 	
 	public void startGame(){
+		System.out.println("game started!");
+		
 		//initialize the results map
 		resultsMap = new HashMap<String, Vector<String>>(connectedClientSockets.size());
 		
@@ -92,15 +95,16 @@ public class GameSession extends Thread {
 	/**
 	 * adds a client to the gameSession
 	 */
-	public void joinGame(Socket clientSocket){
+	public synchronized void joinGame(Socket clientSocket){
+		System.out.println("adding new client");
 		//add socket to collection of connected clientSockets
 		connectedClientSockets.add(clientSocket);
 		
 		//spawn a new thread that would listen to this client's requests
 		clientListeners.add(new ClientListener(clientSocket));
 		
-		String msg = "You are now connected to gameSessionID:"+gameID;
-		sendMsgToSocket(msg, clientSocket);		
+//		String msg = "You are now connected to gameSessionID:"+gameID;
+//		sendMsgToSocket(msg, clientSocket);		
 //		System.out.println("added new client to sessionID:" + gameID);
 		System.out.println("random word:"+gameServer.getAword());
 	}
@@ -113,8 +117,9 @@ public class GameSession extends Thread {
 	public void sendMsgToSocket(String message,Socket client){
 		Socket clientSocket = client;
 		try {
-			PrintWriter outToClient = new PrintWriter(clientSocket.getOutputStream(),true);
+			outToClient = new PrintWriter(clientSocket.getOutputStream(),true);
 			outToClient.println(message);
+			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -144,7 +149,10 @@ public class GameSession extends Thread {
 	@Override
 	public void run() {
 		joinGame(gameHostSocket); //add host client to game
-		sendMsgToSocket("game session port: "+sessionSocket.getLocalPort(), gameHostSocket);
+//		sendMsgToSocket("waiting for players...", s);
+		
+		
+//		sendMsgToSocket("game session port: "+sessionSocket.getLocalPort(), gameHostSocket);
 		
 		while(connectedClientSockets.size() <= MIN_PLAYERS){ 
 			Thread.yield(); //keep waiting for other players to join

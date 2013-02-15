@@ -8,8 +8,6 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.HashMap;
-import java.util.Random;
 
 /**
  * 
@@ -25,6 +23,7 @@ public class ServerWorker extends Thread{
 	public ServerWorker(Socket socket,Server parentServer) {
 		clientSocket = socket;
 		mainServer = parentServer;
+		if(mainServer == null){System.out.println("mainServer's null!!");}
 		try {
 			out = new PrintWriter(clientSocket.getOutputStream(),true);
 			in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
@@ -58,7 +57,7 @@ public class ServerWorker extends Thread{
 	}
 
 	/**
-	 * 
+	 * Processes the message from the client
 	 * @param message
 	 * @return true if the client is still at the menu stage
 	 */
@@ -72,21 +71,38 @@ public class ServerWorker extends Thread{
 			//TODO launch 'USAGE' OR HELP MENU
 			return true;
 		}
-		if(messageParam[0].equals("@join")){
+		
+		
+		if(messageParam[0].contains("@join")){
 			
 			
-			//if the specific session was requested
+			//The specific session was requested
 			if(messageParam.length > 1){
 				//TODO search for a game session with id messageParam[1]
+				
+				int gameId =  Integer.parseInt(messageParam[1]);
+				//TODO ensure 2 parameter (the joinId is valid)
+				GameSession session = mainServer.getGameSession(gameId);
+				
+				if(session == null) {
+					out.println("game session not found ID:" + gameId);
+					return true;
+				}
+				System.out.println("session appeded");
+				System.out.println(session.getGameID());
+				session.joinGame(clientSocket); 
 				//add client to the gameSession
 				out.println("@join received");
+				return false;
 			}
-			out.println("@join received");
+			else{
+				out.println("Please specify game session ID");
+				return true;
+			}
 			
 			
 			//join client with a random game session
 			//TODO determine a game session or let the user decide via the message 
-			return true;
 		}
 		else if(messageParam[0].contains("@host")){
 			
@@ -99,12 +115,18 @@ public class ServerWorker extends Thread{
 	       
 	       session.start();
 	       
-	       out.println("@host received");
+	       out.println("New game session:"+ session.getGameID());
 	       return false;
+		}
+		
+		else if(messageParam[0].contains("@list")){
+			System.out.println("sessionlist count:" + mainServer.sessionMap.size());
+			out.println("Game sessions:"+mainServer.listGameSessions());
+			return true;
 		}
 		else{
 			System.out.println(messageParam[0]);
-			out.println("not understood");
+			out.println("server could not interpret message");
 			return true;
 		}
 		
