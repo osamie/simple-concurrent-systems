@@ -1,7 +1,7 @@
 ###### CONFIGURATION ######
 
 ### List of applications to be build
-APPLICATIONS = 
+APPLICATIONS = main
 
 #trivial-periodic 
 
