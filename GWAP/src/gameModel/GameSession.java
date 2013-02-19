@@ -17,11 +17,10 @@ import gameServer.ServerWorker;
 public class GameSession extends Thread {
 	
 	private ServerSocket sessionSocket;  //game session socket
-	private Socket gameHostSocket;   //game host's socket
 	private Server gameServer;
 	private Vector<Socket> connectedClientSockets;
 	private int gameID,currentQIndex;
-	private static final int MIN_PLAYERS = 2; //maximum number of players per game
+	private static final int MIN_PLAYERS = 2; //minimum number of players per game
 	private ArrayList<ClientListener> clientListeners;
 	PrintWriter outToClient;
 	
@@ -32,7 +31,6 @@ public class GameSession extends Thread {
 	HashMap<String,Vector<String>> resultsMap;
 	
 	public GameSession(Socket hostClientSocket, Server server){
-		gameHostSocket = hostClientSocket;
 		gameServer = server;
 		connectedClientSockets = new Vector<Socket>(MIN_PLAYERS);
 		clientListeners = new ArrayList<ClientListener>(MIN_PLAYERS); 
@@ -103,9 +101,6 @@ public class GameSession extends Thread {
 			resultsMap.put(word, results);
 			count--;
 		}
-		
-		printResult();
-		
 	}
 	
 	/**
@@ -121,21 +116,21 @@ public class GameSession extends Thread {
 	 * adds a client to the gameSession
 	 */
 	public synchronized void joinGame(Socket clientSocket){
-		System.out.println("adding new client");
-		//add socket to collection of connected clientSockets
-		connectedClientSockets.add(clientSocket);
+		
 		
 		//spawn a new thread that would listen to this client's requests
 		ClientListener listener = new ClientListener(clientSocket);
 		
-		
 		//Will be used by session to get answers from client
 		clientListeners.add(listener); 
 		
-		listener.start();
+		listener.start(); //listen for game inputs  
 		
-		String message = String.format("(Session id: %d)Waiting for other players...", this.gameID);
+		String message = String.format("@joinAck %d", this.gameID);
 		sendMsgToSocket(message, clientSocket);
+		
+		//add socket to collection of connected clientSockets
+		connectedClientSockets.add(clientSocket);
 	}
 	
 	/**
@@ -159,9 +154,10 @@ public class GameSession extends Thread {
 	
 	public void endSession(){
 		try {
-			gameHostSocket.close();
-			sessionSocket.close();
-			
+				//remove this session from the server's list of sessions
+				gameServer.removeSession(this);  				
+				broadCastMessage("@quitGame"); //remove all clients from the session
+				sessionSocket.close();
 		} catch (IOException e) {
 //			System.err.println(String.format("Could not close gameSession on port %i",sessionSocket.getLocalPort()));
 			e.printStackTrace();
@@ -177,22 +173,17 @@ public class GameSession extends Thread {
 	
 	@Override
 	public void run() {
-//		joinGame(gameHostSocket); //add host client to game
-//		sendMsgToSocket("waiting for players...", s);
-		
-		
 //		sendMsgToSocket("game session port: "+sessionSocket.getLocalPort(), gameHostSocket);
 		
 		//waiting for the required number of players 
 		while(connectedClientSockets.size() <= MIN_PLAYERS){ 
 			Thread.yield(); //give way to other threads in the meanwhile 
 		}
-		
-		//players are ready, now the start game
-		startGame();
-		
-		System.out.println("GAME OVER");//TODO print result
-		
+		startGame(); //players are ready, now the start game
+		System.out.println("GAME OVER");
+		broadCastMessage("@quitGame");
+		printResult();//print game results
+		endSession();
 	}
 }
 
@@ -203,12 +194,11 @@ public class GameSession extends Thread {
 class ClientListener extends Thread{
 	Socket clientSocket;
 //	GameSession gameSession;
-	private String answer=" ";
+	String answer="";
 	BufferedReader inFromClient;
 	
 	public ClientListener(Socket socket) {
 		clientSocket = socket;
-//		gameSession = session;
 		try {
 			inFromClient = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		} catch (IOException e) {
@@ -217,35 +207,44 @@ class ClientListener extends Thread{
 	}
 	
 
-	//returns a null string if no answer have been submitted by the client 
-	//or returns the most recent entry by the the client ;
+	/**
+	 * returns a null string if no answer have been submitted by the client
+	 * or returns the most recent entry by the the client 
+	 * @return
+	 */
+	
 	public String getAnswer(){
-		return answer;
+		String result = new String(answer);
+		answer = ""; //reset answer after every read
+		return result;
 	}
 	
 	
 	/**
 	 * Listens for answers from clients 
 	 * new answers will overwrite the answer variable. Only 1 answer per question
+	 * Returns false if client has been disconnected/closed 
 	 */
-	public void listenForWords(){
+	public boolean listenForWords(){
 		
 		try {
 			//wait for answer from client
-			answer = inFromClient.readLine(); 
-			System.out.println("answer read:" + answer);
+			answer = inFromClient.readLine();
+			if(answer == null) return false;
+			else {return true;}
+			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} 	
+		}
+		return false; 	
 		
 	}
 	
 	
-	
 	@Override
 	public void run() {
-		while(true){
+		while(!clientSocket.isClosed()){
 			listenForWords();
 		}
 	}

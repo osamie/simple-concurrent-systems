@@ -97,7 +97,6 @@ public class ServerWorker extends Thread{
 		}
 		else if(messageParam[0].contains("@host")){
 			
-			
 			//create a new gameSession with the generated gameID
 	       GameSession session = new GameSession(clientSocket,mainServer);
 	       

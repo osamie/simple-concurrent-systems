@@ -6,7 +6,6 @@ import gameModel.GameSession;
 
 import java.io.*;
 import java.net.*;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -22,7 +21,7 @@ public class Server {
    public HashMap<Integer,GameSession> sessionMap;
    
    private static String [] dictionary = 
-	   {"whatever","house","game","love","kitchen",
+	   {"water","magnitude","house","game","love","kitchen",
 	   "hat","skyfall","employment","cosmetics",
 	   "lovers","bottle","hat-trick","skyfalling"}; 
    
@@ -90,7 +89,16 @@ public class Server {
    @Override
    public void finalize()
    {
-	   try { 
+	   try {
+		   
+		   //end all game sessions
+		   Iterator<Entry<Integer, GameSession>> iterator = sessionMap.entrySet().iterator();
+			
+		   while(iterator.hasNext()){
+			   Map.Entry<Integer, GameSession> pairs = (Map.Entry<Integer, GameSession>)iterator.next();
+			   pairs.getValue().endSession();
+		   }
+			  
 		   serverSocket.close(); 
 		   clientSocket.close();
 	   } catch (IOException e) {
@@ -123,4 +131,9 @@ public class Server {
 	public GameSession getGameSession(Integer sessionID) {
 		return sessionMap.get(sessionID);
 	}
+
+
+public void removeSession(GameSession gameSession) {
+	sessionMap.remove(gameSession);
+}
 }

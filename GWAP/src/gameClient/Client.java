@@ -69,9 +69,10 @@ public class Client {
 	   /**
 	    * perform setup here
 	    */
-	   System.out.println("What would you like to do? \n " +
-	   		"To create a new session enter 'host' \n" +
-	       	"To join any existing sessions enter 'join' \n");
+	   System.out.println("****************\n " +
+	   		"To create a new session enter '@host' \n" +
+	       	"To join any existing sessions enter '@join <sessionID>' \n" +
+	       	"****************");
 	   
 	   
 	   while(streamSocket.isBound()){
@@ -116,15 +117,22 @@ public class Client {
 				   return;
 			   }
 			   else{
-				   out.println(str);
+				   out.println(str); //send request to server
 				   try {
 					   //error check acknowledgment messages
+					   String serverMessage = in.readLine();//message from server
+//					   boolean gameReady = false;
+					   while(processServerMsg(serverMessage)){
+//						   gameReady = processServerMsg(serverMessage);
+//						   if(serverMessage.contains("@joinAck!")) break;
+						   serverMessage = in.readLine(); //get message from server
+					   }
 					   
-						//join acknowledgment from server 
-						System.out.println(in.readLine());
-						
-						//game start message from server
-						System.out.println(in.readLine());
+//						//join acknowledgment from server 
+//						System.out.println(in.readLine());
+//						
+//						//game start message from server
+//						System.out.println(in.readLine());
 						
 						gameStarted();		
 				   } catch (IOException e) {
@@ -133,7 +141,7 @@ public class Client {
 			   }
 		   }
 		   else if(str.contains("@list")){
-			   out.println(str);
+			   out.println(str); //send request to server
 			   try {
 					//wait for reply from server 
 					System.out.println(in.readLine());
@@ -143,15 +151,18 @@ public class Client {
 				
 		   }
 		   else if(str.contains("@host")){
-			   out.println(str);
+			   out.println(str); //send request to server
 			   try {
 				   	//error check acknowledgment messages
 				   
-					//join acknowledgment from server 
-					System.out.println(in.readLine());
+				   
+				   String serverMessage = in.readLine();//message from server
+				   boolean gameReady = false;
+				   while((serverMessage != null)&&(!gameReady)){
+					   gameReady = processServerMsg(serverMessage);
+					   serverMessage = in.readLine(); //get message from server
+				   }
 					
-					//game start message from server
-					System.out.println(in.readLine());
 					
 					gameStarted();		
 			   } catch (IOException e) {
@@ -176,6 +187,40 @@ public class Client {
    }
    
    /**
+    * Process message from server
+    * @param serverMessage
+    * @return  True if game starts. False otherwise.
+    */
+   private boolean processServerMsg(String serverMessage) {
+	   if (serverMessage == null) return false;
+	   
+
+	   if(serverMessage.contains("@joinAck")){
+		   
+		   String [] params = serverMessage.split(" ");
+		   
+		   if(params.length < 2){
+			   //could not join game. Disonnect
+			   System.out.println("Could not join game");
+			   close();
+			   System.exit(-1);
+		   }
+		   String message = String.format("(Session id: %d)Waiting for other players...",Integer.parseInt(params[1]));
+		   System.out.println(message);
+		   return true;
+	   }
+	   else if(serverMessage.equals("@startGame")){
+		   return false;
+	   }
+	   else if(serverMessage.equals("@quitGame")){
+		   System.out.println("Game quitted by server");
+		   System.exit(-1);
+	   }
+	   
+	return false;
+}
+
+/**
     * called after getting gameStarted ack from session 
     */
    private void gameStarted() {
@@ -189,12 +234,10 @@ public class Client {
 			   
 			   //get word from server
 			   System.out.println("\n***New Challenge:***" + in.readLine());
-			   
-			   
+			    
 			   //read user entry from console and send as response
 			   out.println(clientConsole.readLine());
 			   
-//			   System.out.println("");
 			   
 		   } catch (IOException e) {
 			   // TODO Auto-generated catch block
@@ -211,16 +254,14 @@ public class Client {
     * display client usage on the console
     */
    public static void help(){
-	   System.out.println("Invalid option number \nUSAGE is java gameClient.Client <server-port#> <option-number> e.g java gameClient.Client 5000 1");
-	   System.out.println("OPTION#s:");
-	   System.out.println("0 - Opens this menu");
-	   System.out.println("1 - create a gameSession");
-	   System.out.println("2 - show list of existing gameSessions on the specified server");
-	   System.out.println("3 - join a game session. This should be followed by the game's sessionID");
+	   System.out.println("Invalid input \n");
+	   System.out.println("USAGE:");
+	   System.out.println("@host - creates a new gameSession");
+	   System.out.println("@list - show list of existing gameSessions on the specified server");
+	   System.out.println("@join <> - join a game session. This should be followed by the game's sessionID");
    }
    public static void main(String args[])
    { 
-	 
       if(args.length > 0){
     	  Client c = new Client(Integer.parseInt(args[0]));
     	  c.start();
@@ -228,8 +269,15 @@ public class Client {
     	  return;
       }
       else{
-    	  help();
+    	  System.out.println("Please pass in the server port number as an argument");
       }
       
    }
+   
+   @Override
+	protected void finalize() throws Throwable {
+		in.close();
+		out.close();
+		streamSocket.close();
+	}
 }
