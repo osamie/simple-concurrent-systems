@@ -1,23 +1,22 @@
 package gameClient;
-// EchoClient.java
-//    TCP Version 
-// @version CS January 2009
 
-import gameServer.Server;
 
 import java.io.*;
 import java.net.*;
-import java.util.ArrayList;
 
 public class Client {
 
-   private Socket streamSocket;
+   Socket streamSocket;
+   private boolean gameStarted;
    private BufferedReader in;
    private PrintWriter out;
-   private InputStreamReader converter;
-   private BufferedReader clientConsole;
-   private ArrayList<String> adminMessages; 
-   private boolean gameStarted;
+   
+   //client modes
+   public static final int NORMAL = 0;
+   public static final int WAITING = 1;
+   public static final int GAME_STARTED = 2;
+   
+   private int mode;
 
    /**
     * Clients hosting a game session
@@ -25,13 +24,7 @@ public class Client {
     */
    public Client(int port)
    {
-	   int numberOfCommands = 3;
-	   adminMessages = new ArrayList<String>(numberOfCommands);
-       adminMessages.add("@list");
-       adminMessages.add("@join");
-       adminMessages.add("@host");
-	   init(port);
-	   
+	   init(port);   
 	   gameStarted = false;
    }
    
@@ -42,8 +35,7 @@ public class Client {
 	    	 
 	    	 out = new PrintWriter(streamSocket.getOutputStream(), true);
 	    	 in = new BufferedReader( new InputStreamReader( streamSocket.getInputStream()));
-	    	 converter = new InputStreamReader(System.in);
-	         clientConsole = new BufferedReader(converter);   
+	    	 mode = NORMAL;
 	    	 
 	      } catch (UnknownHostException e1) {
 	          System.err.println("Don't know about host");
@@ -52,6 +44,10 @@ public class Client {
 	          System.err.println("Couldn't get port "+port);
 	          System.exit(1);
 	     }
+   }
+   
+   public int getMode(){
+	   return mode;
    }
    
    public void close()
@@ -68,116 +64,38 @@ public class Client {
    }
    
    public void start(){
-	   System.out.println("Connected to server");
-	   
+	   System.out.println("Connected to server");	   
 	   System.out.println("****************\n " +
 	   		"To create a new session enter '@host' \n" +
 	       	"To join any existing sessions enter '@join <sessionID>' \n" +
 	       	"****************");
-	   
-	   while(streamSocket.isBound()){
-		   
-	          try {
-	        	    System.out.print("Type: ");
-	    			String str = clientConsole.readLine();
-	    			//process input here
-	    			if(str.equals("#exit") || (str.equals("#quit"))){
-	    				   close();
-	    				   return;
-	    			 }
-	    			validateConsoleInput(str);
-	    		} catch (IOException e) {
-	    			System.err.println("I/O exception. Cause: " + e.getCause());
-	    			continue;
-	    		}
-	      }
+	   InputConsoleListener consoleListener = new InputConsoleListener(this);
+	   consoleListener.start();
+	   listenToServer();
    }
-   
    
    /**
-    * validates user's console input before sending to server 
-    * @param str
+    * keeps listening for signal or message from server
     */
-   public void validateConsoleInput(String str){
-	   if (str == null) return;
-	   
-	   if(str.equals("#help")){
-		   help();
-	   }
-	   else if(str.startsWith("@")){
-		   //other utility commands
-		   
-		   if(str.contains("@join")){
-			   String[] command = str.split(" ");
-			   
-			   if(command.length < 2){
-				   System.out.println("Please specify game session ID. \nUSAGE:@join <sessionID> \ntype '@list' to list current sessions");
-				   return;
-			   }
-			   else{
-				   out.println(str); //send request to server
-				   try {
-					   //error check acknowledgment messages
-					   String serverMessage = in.readLine();//message from server
-//					   boolean gameReady = false;
-					   while(processServerMsg(serverMessage)){
-//						   gameReady = processServerMsg(serverMessage);
-//						   if(serverMessage.contains("@joinAck!")) break;
-						   serverMessage = in.readLine(); //get message from server
-					   }
-					   
-//						//join acknowledgment from server 
-//						System.out.println(in.readLine());
-//						
-//						//game start message from server
-//						System.out.println(in.readLine());
-						
-						startGame();		
-				   } catch (IOException e) {
-						e.printStackTrace();
-				   }
-			   }
-		   }
-		   else if(str.contains("@list")){
-			   out.println(str); //send request to server
-			   try {
-					//wait for reply from server 
-					System.out.println(in.readLine());
-			   } catch (IOException e) {
-					e.printStackTrace();
-			   }				
-		   }
-		   else if(str.contains("@host")){
-			   out.println(str); //send request to server
-			   try {
-				   	//error check acknowledgment messages
-				   
+   private void listenToServer() {
+	   while(streamSocket.isConnected() && !streamSocket.isClosed()){
+			try {
+				//error check acknowledgment messages
 				   String serverMessage = in.readLine();//message from server
-				   boolean gameReady = false;
-				   while((serverMessage != null)&&(!gameReady)){
-					   gameReady = processServerMsg(serverMessage);
+				   while(processServerMsg(serverMessage)){
 					   serverMessage = in.readLine(); //get message from server
-				   }			
-					startGame();		
-			   } catch (IOException e) {
-					e.printStackTrace();
-			   }
-				
-		   }
-		   else{
-			   //invalid utility command
-			   System.out.println("invalid '@' command");
-			   help();
-			   return;
-		   }
-	   }
-	   else{
-		   if(gameStarted == true){
-			   out.println(str);
-		   }
-		   
-	   }	
+				   }
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}	
+		}
    }
+   
+   public boolean hasGameStarted(){
+	   return gameStarted;
+   }
+    
    
    /**
     * Process message from server
@@ -187,9 +105,8 @@ public class Client {
    private boolean processServerMsg(String serverMessage) {
 	   if (serverMessage == null) return false;
 	   
-
 	   if(serverMessage.contains("@joinAck")){
-		   
+		   mode = WAITING; 
 		   String [] params = serverMessage.split(" ");
 		   
 		   if(params.length < 2){
@@ -203,43 +120,18 @@ public class Client {
 		   return true;
 	   }
 	   else if(serverMessage.equals("@startGame")){
+		   mode = GAME_STARTED;
 		   return false;
 	   }
 	   else if(serverMessage.equals("@quitGame")){
+		   mode=NORMAL;
 		   System.out.println("Game quitted by server");
 		   System.exit(-1);
 	   }
-	   
-	return false;
-}
-
-/**
-    * called after getting gameStarted ack from session 
-    */
-   private void startGame() { 
-	   gameStarted = true;
-	   while(!streamSocket.isClosed()){
-		  
-		   try {
-			   //keep processing message from server until process() returns false
-			   //
-			   
-			   //get word from server
-			   System.out.println("\n***New Challenge:***" + in.readLine());
-			    
-			   //read user entry from console and send as response
-			   out.println(clientConsole.readLine());
-			   
-			   
-		   } catch (IOException e) {
-			   // TODO Auto-generated catch block
-			   e.printStackTrace();
-		   }
-		   
-		   //wait for clients reply
-
+	   else{
+		   System.out.println(serverMessage);
 	   }
-	
+	   return false;
    }
 
    /**
@@ -263,8 +155,7 @@ public class Client {
       }
       else{
     	  System.out.println("Please pass in the server port number as an argument");
-      }
-      
+      }  
    }
    
    @Override
@@ -274,3 +165,4 @@ public class Client {
 		streamSocket.close();
 	}
 }
+
