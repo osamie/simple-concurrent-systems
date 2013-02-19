@@ -17,6 +17,7 @@ public class Client {
    private InputStreamReader converter;
    private BufferedReader clientConsole;
    private ArrayList<String> adminMessages; 
+   private boolean gameStarted;
 
    /**
     * Clients hosting a game session
@@ -30,6 +31,8 @@ public class Client {
        adminMessages.add("@join");
        adminMessages.add("@host");
 	   init(port);
+	   
+	   gameStarted = false;
    }
    
    private void init(int port){
@@ -53,6 +56,7 @@ public class Client {
    
    public void close()
    {
+	   gameStarted = false; 
 	   try {
 		   out.close();
 		   in.close();
@@ -66,14 +70,10 @@ public class Client {
    public void start(){
 	   System.out.println("Connected to server");
 	   
-	   /**
-	    * perform setup here
-	    */
 	   System.out.println("****************\n " +
 	   		"To create a new session enter '@host' \n" +
 	       	"To join any existing sessions enter '@join <sessionID>' \n" +
 	       	"****************");
-	   
 	   
 	   while(streamSocket.isBound()){
 		   
@@ -92,8 +92,6 @@ public class Client {
 	    		}
 	      }
    }
-   
-//   private boolean process
    
    
    /**
@@ -134,7 +132,7 @@ public class Client {
 //						//game start message from server
 //						System.out.println(in.readLine());
 						
-						gameStarted();		
+						startGame();		
 				   } catch (IOException e) {
 						e.printStackTrace();
 				   }
@@ -147,24 +145,20 @@ public class Client {
 					System.out.println(in.readLine());
 			   } catch (IOException e) {
 					e.printStackTrace();
-			   }
-				
+			   }				
 		   }
 		   else if(str.contains("@host")){
 			   out.println(str); //send request to server
 			   try {
 				   	//error check acknowledgment messages
 				   
-				   
 				   String serverMessage = in.readLine();//message from server
 				   boolean gameReady = false;
 				   while((serverMessage != null)&&(!gameReady)){
 					   gameReady = processServerMsg(serverMessage);
 					   serverMessage = in.readLine(); //get message from server
-				   }
-					
-					
-					gameStarted();		
+				   }			
+					startGame();		
 			   } catch (IOException e) {
 					e.printStackTrace();
 			   }
@@ -178,12 +172,11 @@ public class Client {
 		   }
 	   }
 	   else{
-		   out.println(str);
-	   }
-		  
-	
-		
-		
+		   if(gameStarted == true){
+			   out.println(str);
+		   }
+		   
+	   }	
    }
    
    /**
@@ -223,9 +216,8 @@ public class Client {
 /**
     * called after getting gameStarted ack from session 
     */
-   private void gameStarted() {
-	   //keep reading inputs from the 
-	   
+   private void startGame() { 
+	   gameStarted = true;
 	   while(!streamSocket.isClosed()){
 		  
 		   try {
@@ -250,7 +242,7 @@ public class Client {
 	
    }
 
-/**
+   /**
     * display client usage on the console
     */
    public static void help(){
@@ -260,6 +252,7 @@ public class Client {
 	   System.out.println("@list - show list of existing gameSessions on the specified server");
 	   System.out.println("@join <> - join a game session. This should be followed by the game's sessionID");
    }
+   
    public static void main(String args[])
    { 
       if(args.length > 0){

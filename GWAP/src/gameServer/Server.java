@@ -73,7 +73,11 @@ public class Server {
    }
    
    public void launchGameServer()
-   {   
+   {
+	   System.out.println("\t*****************");
+	   System.out.println("\tGWAP Game Server");
+	   System.out.println("\t*****************");
+//	   System.out.println("Listening for new connections...");
 	   try {
 		   while (true){
 			  //wait for an initial connection from host client 
@@ -107,21 +111,12 @@ public class Server {
    }
    
    /**
-    * display server usage on the console
+    * Displays server usage on the console
     */
    public static void help(){
 	   System.out.println("\nInvalid port number \nUSAGE:\n\tjava gameServer.Server <server-port#> \n\te.g java gameServer.Server 5000");
    }
 
-   public static void main( String args[] )
-   {
-	  if(args.length < 1){
-	    	  help();
-	    	  return;
-	  } 
-      Server c = new Server(Integer.parseInt(args[0]));
-      c.launchGameServer();
-   }
 
    /**
     * returns a specific game session
@@ -133,7 +128,17 @@ public class Server {
 	}
 
 
-public void removeSession(GameSession gameSession) {
-	sessionMap.remove(gameSession);
-}
+	public void removeSession(GameSession gameSession) {
+		sessionMap.remove(gameSession);
+	}
+	
+	public static void main( String args[] )
+	{
+		if(args.length < 1){
+	    	  help();
+	    	  return;
+		} 
+		Server c = new Server(Integer.parseInt(args[0]));
+		c.launchGameServer();
+	}
 }
