@@ -20,15 +20,13 @@ public class ServerWorker extends Thread{
 	BufferedReader in;
 	Server mainServer;
 	
-	
 	public ServerWorker(Socket socket,Server parentServer) {
 		clientSocket = socket;
 		mainServer = parentServer;
 		if(mainServer == null){System.out.println("mainServer's null!!");}
 		try {
 			out = new PrintWriter(clientSocket.getOutputStream(),true);
-			in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-			
+			in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));			
 		}catch (SocketException e2) { System.out.println("Done"); System.exit(0); }
 		catch (IOException e) { e.printStackTrace(System.err); System.exit(1);  }
 		
@@ -65,9 +63,7 @@ public class ServerWorker extends Thread{
 		}
 		
 		
-		if(messageParam[0].contains("@join")){
-			
-			
+		if(messageParam[0].contains("@join")){		
 			//The specific session was requested
 			if(messageParam.length > 1){
 				//TODO search for a game session with id messageParam[1]
@@ -90,8 +86,7 @@ public class ServerWorker extends Thread{
 				out.println("Please specify game session ID");
 				return true;
 			}
-			
-			
+					
 			//join client with a random game session
 			//TODO determine a game session or let the user decide via the message 
 		}

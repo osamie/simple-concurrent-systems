@@ -91,11 +91,11 @@ public class InputConsoleListener extends Thread {
 		   out.println(str); //send request to server
 	   }
 	   else{
-		   if(client.hasGameStarted() == true){
+		   if(client.getMode() == Client.GAME_STARTED){
 			   //if game has started then allow sending of 
 			   //messages without the '@' or '#' prefixes 
 			   out.println(str);
-		   }		   
+		   }
 	   }	
    }
 

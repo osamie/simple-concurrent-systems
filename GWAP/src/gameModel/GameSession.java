@@ -19,22 +19,20 @@ public class GameSession extends Thread {
 	private ServerSocket sessionSocket;  //game session socket
 	private Server gameServer;
 	private Vector<Socket> connectedClientSockets;
-	private int gameID,currentQIndex;
-	private static final int MIN_PLAYERS = 2; //minimum number of players per game
+	private int gameID;
+	private static final int MIN_PLAYERS = 1; //minimum number of players per game
+	private int timeOut; //question timeout in minute
 	private ArrayList<ClientListener> clientListeners;
 	PrintWriter outToClient;
-	
-//	private PrintWriter outToClient;
-	
-	
 	Vector<String> currentQuestion;
 	HashMap<String,Vector<String>> resultsMap;
+	
 	
 	public GameSession(Socket hostClientSocket, Server server){
 		gameServer = server;
 		connectedClientSockets = new Vector<Socket>(MIN_PLAYERS);
 		clientListeners = new ArrayList<ClientListener>(MIN_PLAYERS); 
-		currentQIndex = 0;
+		timeOut = 5000; //in milliseconds
 		try{
 			sessionSocket = new ServerSocket(0);//create a session socket with any available port
 			gameID = sessionSocket.getLocalPort(); //gameID is the port local port number of the session
@@ -43,8 +41,6 @@ public class GameSession extends Thread {
 		}
 	}
 	
-
-
 	public Integer getGameID(){
 		return gameID;
 	}
@@ -66,6 +62,9 @@ public class GameSession extends Thread {
 	public void startGame(){
 		System.out.println("Game started!");
 		
+		//signal all connected clients that game has started
+		broadCastMessage("@startGame"); 
+		
 		//initialize the results map
 		resultsMap = new HashMap<String, Vector<String>>(connectedClientSockets.size());
 		
@@ -86,7 +85,7 @@ public class GameSession extends Thread {
 			broadCastMessage(word);
 			
 			try {
-				Thread.sleep(4000);  //timer or wait for clients to reply their entries
+				Thread.sleep(timeOut);  //timer or wait for clients to reply their entries
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -111,13 +110,10 @@ public class GameSession extends Thread {
 	}
 
 
-
 	/**
 	 * adds a client to the gameSession
 	 */
 	public synchronized void joinGame(Socket clientSocket){
-		
-		
 		//spawn a new thread that would listen to this client's requests
 		ClientListener listener = new ClientListener(clientSocket);
 		
@@ -126,6 +122,7 @@ public class GameSession extends Thread {
 		
 		listener.start(); //listen for game inputs  
 		
+		//signal the client that they have joined the gameSession
 		String message = String.format("@joinAck %d", this.gameID);
 		sendMsgToSocket(message, clientSocket);
 		
@@ -173,8 +170,6 @@ public class GameSession extends Thread {
 	
 	@Override
 	public void run() {
-//		sendMsgToSocket("game session port: "+sessionSocket.getLocalPort(), gameHostSocket);
-		
 		//waiting for the required number of players 
 		while(connectedClientSockets.size() <= MIN_PLAYERS){ 
 			Thread.yield(); //give way to other threads in the meanwhile 
@@ -193,12 +188,12 @@ public class GameSession extends Thread {
  */
 class ClientListener extends Thread{
 	Socket clientSocket;
-//	GameSession gameSession;
-	String answer="";
+	String answer;
 	BufferedReader inFromClient;
 	
 	public ClientListener(Socket socket) {
 		clientSocket = socket;
+		answer="";
 		try {
 			inFromClient = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		} catch (IOException e) {
@@ -215,7 +210,9 @@ class ClientListener extends Thread{
 	
 	public String getAnswer(){
 		String result = new String(answer);
+		System.out.println("answer is:" + result);
 		answer = ""; //reset answer after every read
+		System.out.println("answer is:" + result);
 		return result;
 	}
 	
@@ -230,9 +227,10 @@ class ClientListener extends Thread{
 		try {
 			//wait for answer from client
 			answer = inFromClient.readLine();
-			if(answer == null) return false;
-			else {return true;}
-			
+			if(answer == null){
+				return false;
+			}
+			return true;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

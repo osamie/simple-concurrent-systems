@@ -7,7 +7,6 @@ import java.net.*;
 public class Client {
 
    Socket streamSocket;
-   private boolean gameStarted;
    private BufferedReader in;
    private PrintWriter out;
    
@@ -25,7 +24,6 @@ public class Client {
    public Client(int port)
    {
 	   init(port);   
-	   gameStarted = false;
    }
    
    private void init(int port){
@@ -52,7 +50,7 @@ public class Client {
    
    public void close()
    {
-	   gameStarted = false; 
+	   mode = NORMAL;
 	   try {
 		   out.close();
 		   in.close();
@@ -91,10 +89,6 @@ public class Client {
 			}	
 		}
    }
-   
-   public boolean hasGameStarted(){
-	   return gameStarted;
-   }
     
    
    /**
@@ -110,7 +104,7 @@ public class Client {
 		   String [] params = serverMessage.split(" ");
 		   
 		   if(params.length < 2){
-			   //could not join game. Disonnect
+			   //could not join game. Disonnect.
 			   System.out.println("Could not join game");
 			   close();
 			   System.exit(-1);
@@ -121,17 +115,21 @@ public class Client {
 	   }
 	   else if(serverMessage.equals("@startGame")){
 		   mode = GAME_STARTED;
-		   return false;
+		   return true;
 	   }
 	   else if(serverMessage.equals("@quitGame")){
 		   mode=NORMAL;
-		   System.out.println("Game quitted by server");
-		   System.exit(-1);
+		   close();
+		   return false;
+		   //System.out.println("Game quitted by server");
+//		   System.exit(-1);
 	   }
 	   else{
+		   System.out.println("game mode:" + mode);
 		   System.out.println(serverMessage);
+		   return true;
 	   }
-	   return false;
+//	   return false;
    }
 
    /**
