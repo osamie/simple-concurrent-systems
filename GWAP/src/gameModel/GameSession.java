@@ -1,7 +1,21 @@
+/**
+ * GameSession.java
+ * 
+ * The creation of a game session is triggered by a client. 
+ * The session coordinates the game play. It is responsible for informing all connected 
+ * clients of the current state of the game.     
+ * 
+ * Once a session is created, other clients can join the session. 
+ * And once the minimum number of players has been reached, the session broadcasts a signal 
+ * to all the connected clients and then begins the game.  
+ * It keeps a record of the clients connected to the session.   
+ * 
+ * @author Osazuwa Omigie
+ */
+
 package gameModel;
 
 import java.io.BufferedReader;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -10,9 +24,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Vector;
-
 import gameServer.Server;
-import gameServer.ServerWorker;
 
 public class GameSession extends Thread {
 	
@@ -46,13 +58,20 @@ public class GameSession extends Thread {
 	}
 	
 	/**
-	 * sends a given string to all connect clients
+	 * Sends a given string to all connect clients
 	 * @param message
 	 */
 	public void broadCastMessage(String message){
 		for (Socket s : connectedClientSockets){
 			sendMsgToSocket(message, s);
 		}
+	}
+	
+	/**
+	 * @return The total number of clients on this game session
+	 */
+	public int getPlayerCount(){
+		return connectedClientSockets.size();
 	}
 	
 	/**
@@ -150,11 +169,11 @@ public class GameSession extends Thread {
 	
 	
 	public void endSession(){
-		try {
-				//remove this session from the server's list of sessions
-				gameServer.removeSession(this);  				
-				broadCastMessage("@quitGame"); //remove all clients from the session
-				sessionSocket.close();
+		try{
+			//remove this session from the server's list of sessions
+			gameServer.removeSession(this);  				
+			broadCastMessage("@quitGame"); //remove all clients from the session
+			sessionSocket.close();
 		} catch (IOException e) {
 //			System.err.println(String.format("Could not close gameSession on port %i",sessionSocket.getLocalPort()));
 			e.printStackTrace();
@@ -210,9 +229,9 @@ class ClientListener extends Thread{
 	
 	public String getAnswer(){
 		String result = new String(answer);
-		System.out.println("answer is:" + result);
+//		System.out.println("answer is:" + result);
 		answer = ""; //reset answer after every read
-		System.out.println("answer is:" + result);
+//		System.out.println("answer is:" + result);
 		return result;
 	}
 	
@@ -235,8 +254,7 @@ class ClientListener extends Thread{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return false; 	
-		
+		return false; 		
 	}
 	
 	

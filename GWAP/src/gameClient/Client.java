@@ -1,5 +1,21 @@
+/**
+ * Client.java
+ * 
+ * Each client is composed of 2 threads, namely the 'InputConsoleListener' 
+ * and its main thread. The client uses the 'InputConsoleListener' thread 
+ * in receiving and validating user inputs (from the console). It is also 
+ * responsible for sending these validated inputs to the server.
+ * 
+ *  On the other hand, its main thread is responsible for receiving and 
+ *  processing signals from the server.
+ *  
+ *  The Client may react differently to server signals or user inputs 
+ *  depending on its current state: 
+ *  	NORMAL, WAITING, or GAME_STARTED  
+ *   
+ * @author Osazuwa Omigie
+ */
 package gameClient;
-
 
 import java.io.*;
 import java.net.*;
@@ -10,7 +26,7 @@ public class Client {
    private BufferedReader in;
    private PrintWriter out;
    
-   //client modes
+   //client's modes
    public static final int NORMAL = 0;
    public static final int WAITING = 1;
    public static final int GAME_STARTED = 2;
@@ -39,7 +55,7 @@ public class Client {
 	          System.err.println("Don't know about host");
 	          System.exit(1);
 	     } catch (IOException e2) {
-	          System.err.println("Couldn't get port "+port);
+	          System.err.println("ERROR: Couldn't get port "+port+". \nCheck that game server is running.");
 	          System.exit(1);
 	     }
    }
@@ -62,11 +78,13 @@ public class Client {
    }
    
    public void start(){
-	   System.out.println("Connected to server");	   
-	   System.out.println("****************\n " +
-	   		"To create a new session enter '@host' \n" +
-	       	"To join any existing sessions enter '@join <sessionID>' \n" +
-	       	"****************");
+//	   System.out.println("Connected to server");	   
+	   System.out.println("\t********************************\n" +
+			   "\t\tGWAP Client\n"+
+	       	"\t********************************");
+//	   System.out.println("\tTo create a new session enter '@host' \n" +
+//	       	"\tTo join any existing sessions enter '@join <sessionID>' \n" );
+	   help();
 	   InputConsoleListener consoleListener = new InputConsoleListener(this);
 	   consoleListener.start();
 	   listenToServer();
@@ -90,7 +108,6 @@ public class Client {
 		}
    }
     
-   
    /**
     * Process message from server
     * @param serverMessage
@@ -120,27 +137,29 @@ public class Client {
 	   else if(serverMessage.equals("@quitGame")){
 		   mode=NORMAL;
 		   close();
+		   System.out.println("\n\t****************\n");
+		   System.out.println("\t GAME OVER");
+		   System.out.println("\n\t****************\n");
+		   //TODO kill the input console listener OR take the client back to menu stage
 		   return false;
-		   //System.out.println("Game quitted by server");
-//		   System.exit(-1);
 	   }
 	   else{
-		   System.out.println("game mode:" + mode);
-		   System.out.println(serverMessage);
+//		   if(mode==GAME_STARTED){
+			   System.out.println("\n**"+serverMessage.toUpperCase()+"**");
+//		   }
+		   
 		   return true;
 	   }
-//	   return false;
    }
 
    /**
     * display client usage on the console
     */
    public static void help(){
-	   System.out.println("Invalid input \n");
 	   System.out.println("USAGE:");
 	   System.out.println("@host - creates a new gameSession");
 	   System.out.println("@list - show list of existing gameSessions on the specified server");
-	   System.out.println("@join <> - join a game session. This should be followed by the game's sessionID");
+	   System.out.println("@join <session-ID> - join an existing game session. The session is identified with <session-ID>\n");
    }
    
    public static void main(String args[])

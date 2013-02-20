@@ -1,9 +1,17 @@
+/**
+ * Server.java
+ * 
+ * -Accepts initial connections from clients 
+ * -Spawns a new worker thread 'ServerWorker' for each connected client.
+ * -Holds the collection/record of all currently available and running game sessions.  
+ * -Holds the 'database' of words for the actual game play. 
+ * 
+ * @author Osazuwa Omigie
+ */
+
 package gameServer;
 
-
-
 import gameModel.GameSession;
-
 import java.io.*;
 import java.net.*;
 import java.util.HashMap;
@@ -13,7 +21,6 @@ import java.util.Map.Entry;
 import java.util.Random;
 
 public class Server {
-
    private ServerSocket serverSocket;   
    Socket clientSocket;
    PrintWriter out;
@@ -22,8 +29,9 @@ public class Server {
    
    private static String [] dictionary = 
 	   {"water","magnitude","house","game","love","kitchen",
-	   "hat","skyfall","employment","cosmetics",
-	   "lovers","bottle","hat-trick","skyfalling"}; 
+	   "hat","skyfall","employment","cosmetics","drama",
+	   "lovers","bottle","hat-trick","paradise","nuance","fusion","etymology",
+	   "juvenile","factual","fast"}; 
    
    public Server(int portNum)
    {
@@ -47,12 +55,11 @@ public class Server {
 	  StringBuilder str = new StringBuilder();
 	  
 	  Iterator<Entry<Integer, GameSession>> iterator = sessionMap.entrySet().iterator();
-		
+	  
 	  while(iterator.hasNext()){
 		  Map.Entry<Integer, GameSession> pairs = (Map.Entry<Integer, GameSession>)iterator.next();
-			str.append(pairs.getKey() + ",");
-	  }
-	  
+			str.append(pairs.getKey() + String.format("[%d]",pairs.getValue().getPlayerCount() ) +",");
+	  }	  
 	  if (str.length() == 0) str.append("No game sessions");
 	  return str.toString();
    }
@@ -77,7 +84,6 @@ public class Server {
 	   System.out.println("\t*****************");
 	   System.out.println("\tGWAP Game Server");
 	   System.out.println("\t*****************");
-//	   System.out.println("Listening for new connections...");
 	   try {
 		   while (true){
 			  //wait for an initial connection from host client 
@@ -94,10 +100,9 @@ public class Server {
    public void finalize()
    {
 	   try {
-		   
-		   //end all game sessions
 		   Iterator<Entry<Integer, GameSession>> iterator = sessionMap.entrySet().iterator();
-			
+		   
+		  //End all game sessions
 		   while(iterator.hasNext()){
 			   Map.Entry<Integer, GameSession> pairs = (Map.Entry<Integer, GameSession>)iterator.next();
 			   pairs.getValue().endSession();
@@ -114,7 +119,7 @@ public class Server {
     * Displays server usage on the console
     */
    public static void help(){
-	   System.out.println("\nInvalid port number \nUSAGE:\n\tjava gameServer.Server <server-port#> \n\te.g java gameServer.Server 5000");
+	   System.out.println("\nERROR:Invalid port number \nUSAGE:\n\tjava gameServer.Server <server-port#> \n\t(e.g java gameServer.Server 5000)");
    }
 
 

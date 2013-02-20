@@ -1,7 +1,18 @@
+/**
+ * ServerWorker.java
+ * 
+ * This is a worker thread from the Server. It is spawned for each and every 
+ * newly connected client to the server.It is responsible for handling the
+ * client's request prior to a client hosting or joining a game     
+ * However, this thread will be killed once a client has decided to join or
+ * host a game 
+ *
+ * @author Osazuwa Omigie
+ */
+
 package gameServer;
 
 import gameModel.GameSession;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -9,11 +20,6 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.SocketException;
 
-/**
- * 
- *Handles 'host' or 'join' request from client
- *This thread will be killed once a client has selected join or host option 
- */
 public class ServerWorker extends Thread{
 	Socket clientSocket;
 	PrintWriter out;
@@ -23,14 +29,12 @@ public class ServerWorker extends Thread{
 	public ServerWorker(Socket socket,Server parentServer) {
 		clientSocket = socket;
 		mainServer = parentServer;
-		if(mainServer == null){System.out.println("mainServer's null!!");}
+		if(mainServer == null){System.out.println("mainServer is null!!");}
 		try {
 			out = new PrintWriter(clientSocket.getOutputStream(),true);
 			in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));			
 		}catch (SocketException e2) { System.out.println("Done"); System.exit(0); }
 		catch (IOException e) { e.printStackTrace(System.err); System.exit(1);  }
-		
-		
 	}
 	
 	@Override
@@ -62,7 +66,6 @@ public class ServerWorker extends Thread{
 			return true;
 		}
 		
-		
 		if(messageParam[0].contains("@join")){		
 			//The specific session was requested
 			if(messageParam.length > 1){
@@ -76,8 +79,6 @@ public class ServerWorker extends Thread{
 					out.println("game session not found ID:" + gameId);
 					return true;
 				}
-				System.out.println("session appeded");
-				System.out.println(session.getGameID());
 				session.joinGame(clientSocket); 
 				//add client to the gameSession
 				return false;
@@ -105,7 +106,6 @@ public class ServerWorker extends Thread{
 		}
 		
 		else if(messageParam[0].contains("@list")){
-			System.out.println("sessionlist count:" + mainServer.sessionMap.size());
 			out.println("Game sessions:"+mainServer.listGameSessions());
 			return true;
 		}

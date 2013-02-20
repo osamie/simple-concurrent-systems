@@ -1,6 +1,13 @@
 /**
+ * InputConsoleListener.java
  * 
+ * Listens for user input from the console.
+ * Validates the user input and sends to the game server
+ * 
+ * @author Osazuwa Omigie
+ *
  */
+
 package gameClient;
 
 import java.io.BufferedReader;
@@ -10,10 +17,6 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
 
-/**
- * @author osamie
- *
- */
 public class InputConsoleListener extends Thread {
 	Client client; //this is the parent client
 	PrintWriter out;
@@ -47,8 +50,11 @@ public class InputConsoleListener extends Thread {
 			String str;
 			try {
 				str = clientConsole.readLine(); //read user input from client console
-				//process input here
-				validateConsoleInput(str);
+				
+				//if client is in WAITING mode, do not process input
+				if(client.getMode() == Client.WAITING) continue;
+				
+				validateConsoleInput(str); //process input here
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -77,7 +83,7 @@ public class InputConsoleListener extends Thread {
 		   
 		   if(!legalCommands.contains(command[0])){
 			   //invalid utility command
-			   System.out.println("invalid '@' command");
+			   System.out.println("ERROR: Invalid '@' command\n");
 			   Client.help();
 			   return;
 		   }
@@ -96,6 +102,11 @@ public class InputConsoleListener extends Thread {
 			   //messages without the '@' or '#' prefixes 
 			   out.println(str);
 		   }
+		   else{
+			   System.out.println("\nERROR: Invalid command\n");
+			   Client.help();
+		   }
+		   
 	   }	
    }
 
