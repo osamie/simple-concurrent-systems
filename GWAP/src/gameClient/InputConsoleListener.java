@@ -63,6 +63,16 @@ public class InputConsoleListener extends Thread {
 	}
 	
 	/**
+	 * Unit tests aid: client change of state with user input. 
+	 * @param str
+	 */
+	public void inputToConsole(String str){
+		//if client is in WAITING mode, do not process input
+		if(client.getMode() == Client.WAITING) 
+		validateConsoleInput(str); //process input here
+	}
+	
+	/**
 	* validates user's console input before sending to server 
 	* @param str
 	*/

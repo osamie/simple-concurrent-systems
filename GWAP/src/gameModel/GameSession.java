@@ -166,8 +166,10 @@ public class GameSession extends Thread {
 		}	
 	}
 
-	
-	
+	/**
+	 * Signal connected clients that the session has ended.
+	 * Remove this game session from list of active sessions on the main server
+	 */
 	public void endSession(){
 		try{
 			//remove this session from the server's list of sessions
@@ -195,7 +197,6 @@ public class GameSession extends Thread {
 		}
 		startGame(); //players are ready, now the start game
 		System.out.println("GAME OVER");
-		broadCastMessage("@quitGame");
 		printResult();//print game results
 		endSession();
 	}
@@ -220,7 +221,6 @@ class ClientListener extends Thread{
 		}
 	}
 	
-
 	/**
 	 * returns a null string if no answer have been submitted by the client
 	 * or returns the most recent entry by the the client 

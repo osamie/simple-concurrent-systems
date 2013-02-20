@@ -24,7 +24,7 @@ public class Client {
 
    Socket streamSocket;
    private BufferedReader in;
-   private PrintWriter out;
+   InputConsoleListener consoleListener;
    
    //client's modes
    public static final int NORMAL = 0;
@@ -40,14 +40,14 @@ public class Client {
    public Client(int port)
    {
 	   init(port);   
+	   start();
    }
    
    private void init(int port){
 	   try {
 	         // Bind a socket to any available port on the local host machine. 
 	    	 streamSocket = new Socket("127.0.0.1",port);
-	    	 
-	    	 out = new PrintWriter(streamSocket.getOutputStream(), true);
+	    
 	    	 in = new BufferedReader( new InputStreamReader( streamSocket.getInputStream()));
 	    	 mode = NORMAL;
 	    	 
@@ -68,7 +68,6 @@ public class Client {
    {
 	   mode = NORMAL;
 	   try {
-		   out.close();
 		   in.close();
 		   streamSocket.close();   
 	   } catch (IOException e) { 
@@ -77,15 +76,12 @@ public class Client {
 	   }	   
    }
    
-   public void start(){
-//	   System.out.println("Connected to server");	   
+   public void start(){   
 	   System.out.println("\t********************************\n" +
 			   "\t\tGWAP Client\n"+
 	       	"\t********************************");
-//	   System.out.println("\tTo create a new session enter '@host' \n" +
-//	       	"\tTo join any existing sessions enter '@join <sessionID>' \n" );
 	   help();
-	   InputConsoleListener consoleListener = new InputConsoleListener(this);
+	   consoleListener = new InputConsoleListener(this);
 	   consoleListener.start();
 	   listenToServer();
    }
@@ -151,6 +147,13 @@ public class Client {
 		   return true;
 	   }
    }
+   
+   /*
+    * Handle for automating user input
+    */
+   public InputConsoleListener getConsole(){
+	   return consoleListener;
+   }
 
    /**
     * display client usage on the console
@@ -166,7 +169,6 @@ public class Client {
    { 
       if(args.length > 0){
     	  Client c = new Client(Integer.parseInt(args[0]));
-    	  c.start();
           c.close();
     	  return;
       }
@@ -178,7 +180,6 @@ public class Client {
    @Override
 	protected void finalize() throws Throwable {
 		in.close();
-		out.close();
 		streamSocket.close();
 	}
 }

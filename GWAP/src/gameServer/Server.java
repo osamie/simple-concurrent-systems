@@ -25,7 +25,7 @@ public class Server {
    Socket clientSocket;
    PrintWriter out;
    BufferedReader in;
-   public HashMap<Integer,GameSession> sessionMap;
+   HashMap<Integer,GameSession> sessionMap;
    
    private static String [] dictionary = 
 	   {"water","magnitude","house","game","love","kitchen",
