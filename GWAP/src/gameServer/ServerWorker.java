@@ -35,6 +35,7 @@ public class ServerWorker extends Thread{
 			in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));			
 		}catch (SocketException e2) { System.out.println("Done"); System.exit(0); }
 		catch (IOException e) { e.printStackTrace(System.err); System.exit(1);  }
+		this.setName("ServerWorker");
 	}
 	
 	@Override
@@ -48,6 +49,7 @@ public class ServerWorker extends Thread{
   
 		   } catch (SocketException e2) { System.out.println("Done"); System.exit(0); }
 		   catch (IOException e) { e.printStackTrace(System.err); System.exit(1);  }
+//		System.out.println("Server worker dead!");
 	}
 
 	/**

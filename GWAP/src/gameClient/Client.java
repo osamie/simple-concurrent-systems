@@ -69,7 +69,8 @@ public class Client {
 	   mode = NORMAL;
 	   try {
 		   in.close();
-		   streamSocket.close();   
+		   streamSocket.close(); 
+		   
 	   } catch (IOException e) { 
 		   System.err.println("Couldn't get I/O for the connection");
            System.exit(1);

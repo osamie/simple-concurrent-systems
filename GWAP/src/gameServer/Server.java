@@ -14,20 +14,23 @@ package gameServer;
 import gameModel.GameSession;
 import java.io.*;
 import java.net.*;
-import java.util.HashMap;
+import java.util.concurrent.*;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
+
 
 public class Server {
    private ServerSocket serverSocket;   
    Socket clientSocket;
    PrintWriter out;
    BufferedReader in;
-   HashMap<Integer,GameSession> sessionMap;
    
-   private static String [] dictionary = 
+   ConcurrentHashMap<Integer,GameSession> sessionMap;
+   
+   //read-only word list
+   private final static String [] dictionary = 
 	   {"water","magnitude","house","game","love","kitchen",
 	   "hat","skyfall","employment","cosmetics","drama",
 	   "lovers","bottle","hat-trick","paradise","nuance","fusion","etymology",
@@ -35,7 +38,7 @@ public class Server {
    
    public Server(int portNum)
    {
-	   sessionMap = new HashMap<Integer,GameSession>();
+	   sessionMap = new ConcurrentHashMap<Integer,GameSession>();
        try {
     	   //listen for new gameSession hosts
            serverSocket = new ServerSocket(portNum);
@@ -74,7 +77,7 @@ public class Server {
 	   return dictionary[generator.nextInt(dictionary.length)];
    }
    
-   public synchronized void addToMap(Integer gameID,GameSession session){
+   public void addToMap(Integer gameID,GameSession session){
 	 //add <gameID,session> pair to the gameSessionMap
        sessionMap.put(gameID, session);
    }

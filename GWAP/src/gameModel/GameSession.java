@@ -32,7 +32,7 @@ public class GameSession extends Thread {
 	private Server gameServer;
 	private Vector<Socket> connectedClientSockets;
 	private int gameID;
-	private static final int MIN_PLAYERS = 1; //minimum number of players per game
+	private static final int MIN_PLAYERS = 3; //minimum number of players per game
 	private int timeOut; //question timeout in minute
 	private ArrayList<ClientListener> clientListeners;
 	PrintWriter outToClient;
@@ -44,13 +44,14 @@ public class GameSession extends Thread {
 		gameServer = server;
 		connectedClientSockets = new Vector<Socket>(MIN_PLAYERS);
 		clientListeners = new ArrayList<ClientListener>(MIN_PLAYERS); 
-		timeOut = 5000; //in milliseconds
+		timeOut = 5500; //in milliseconds
 		try{
 			sessionSocket = new ServerSocket(0);//create a session socket with any available port
 			gameID = sessionSocket.getLocalPort(); //gameID is the port local port number of the session
 		}catch(IOException e){
 			System.out.println("problem creating session socket!");
 		}
+		setName("GameSession");
 	}
 	
 	public Integer getGameID(){
@@ -192,7 +193,7 @@ public class GameSession extends Thread {
 	@Override
 	public void run() {
 		//waiting for the required number of players 
-		while(connectedClientSockets.size() <= MIN_PLAYERS){ 
+		while(connectedClientSockets.size() < MIN_PLAYERS){ 
 			Thread.yield(); //give way to other threads in the meanwhile 
 		}
 		startGame(); //players are ready, now the start game
@@ -219,6 +220,7 @@ class ClientListener extends Thread{
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		setName("ClientListener");
 	}
 	
 	/**
@@ -229,9 +231,7 @@ class ClientListener extends Thread{
 	
 	public String getAnswer(){
 		String result = new String(answer);
-//		System.out.println("answer is:" + result);
 		answer = ""; //reset answer after every read
-//		System.out.println("answer is:" + result);
 		return result;
 	}
 	
@@ -241,13 +241,13 @@ class ClientListener extends Thread{
 	 * new answers will overwrite the answer variable. Only 1 answer per question
 	 * Returns false if client has been disconnected/closed 
 	 */
-	public boolean listenForWords(){
+	public boolean listenForClientResponse(){
 		
 		try {
 			//wait for answer from client
 			answer = inFromClient.readLine();
 			if(answer == null){
-				return false;
+				return false; //the client has been disconnected. Kill this thread 
 			}
 			return true;
 		} catch (IOException e) {
@@ -260,8 +260,9 @@ class ClientListener extends Thread{
 	
 	@Override
 	public void run() {
-		while(!clientSocket.isClosed()){
-			listenForWords();
+		boolean keepListening = true;
+		while(!clientSocket.isClosed() && keepListening){
+			keepListening = listenForClientResponse();
 		}
 	}
 }
