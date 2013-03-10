@@ -5,7 +5,7 @@
  * newly connected client to the server.It is responsible for handling the
  * client's request prior to a client hosting or joining a game     
  * However, this thread will be killed once a client has decided to join or
- * host a game 
+ * host a game. 
  *
  * @author Osazuwa Omigie
  */
@@ -102,7 +102,7 @@ public class ServerWorker extends Thread{
 	       mainServer.addToMap(session.getGameID(), session);
 	       
 	       session.start();//start the game thread
-	       session.joinGame(clientSocket);//add itself to the session
+//	       session.joinGame(clientSocket);//add itself to the session
 	       
 	       return false;
 		}
@@ -116,6 +116,18 @@ public class ServerWorker extends Thread{
 			out.println("server could not interpret message");
 			return true;
 		}
+		
+	}
+}
+
+/**
+ * Manages the session before the game starts
+ * 
+ *
+ */
+class SessionHandler extends Thread{
+	@Override
+	public void run() {
 		
 	}
 }

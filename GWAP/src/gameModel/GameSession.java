@@ -24,6 +24,10 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Vector;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 import gameServer.Server;
 
 public class GameSession extends Thread {
@@ -32,9 +36,15 @@ public class GameSession extends Thread {
 	private Server gameServer;
 	private Vector<Socket> connectedClientSockets;
 	private int gameID;
-	private static final int MIN_PLAYERS = 3; //minimum number of players per game
+	private static final int MIN_PLAYERS = 2; //minimum number of players per game
 	private int timeOut; //question timeout in minute
 	private ArrayList<ClientListener> clientListeners;
+	final Lock lock = new ReentrantLock();
+	final Lock joinGameLock = new ReentrantLock();
+	
+	final Condition enoughPlayers  = joinGameLock.newCondition();
+	private Socket hostClientSocket;
+	
 	PrintWriter outToClient;
 	Vector<String> currentQuestion;
 	HashMap<String,Vector<String>> resultsMap;
@@ -42,6 +52,7 @@ public class GameSession extends Thread {
 	
 	public GameSession(Socket hostClientSocket, Server server){
 		gameServer = server;
+		this.hostClientSocket = hostClientSocket;
 		connectedClientSockets = new Vector<Socket>(MIN_PLAYERS);
 		clientListeners = new ArrayList<ClientListener>(MIN_PLAYERS); 
 		timeOut = 5500; //in milliseconds
@@ -131,23 +142,32 @@ public class GameSession extends Thread {
 
 
 	/**
-	 * adds a client to the gameSession
+	 * Adds a client to the gameSession.
+	 * This method should be called by the Server worker thread
 	 */
-	public synchronized void joinGame(Socket clientSocket){
+	public void joinGame(Socket clientSocket){
 		//spawn a new thread that would listen to this client's requests
 		ClientListener listener = new ClientListener(clientSocket);
 		
-		//Will be used by session to get answers from client
-		clientListeners.add(listener); 
+		synchronized (joinGameLock) {
+			//Will be used by session to get answers from client
+			clientListeners.add(listener);
+			
+			//add socket to collection of connected clientSockets
+			connectedClientSockets.add(clientSocket);
+			
+			if(connectedClientSockets.size()==MIN_PLAYERS){
+				//Session is ready to be started. Wake up the session thread to start game.  
+				joinGameLock.notifyAll();
+			}
+		}
 		
-		listener.start(); //listen for game inputs  
+		listener.start(); //start the clientListener thread to listen for game inputs  
 		
 		//signal the client that they have joined the gameSession
 		String message = String.format("@joinAck %d", this.gameID);
 		sendMsgToSocket(message, clientSocket);
 		
-		//add socket to collection of connected clientSockets
-		connectedClientSockets.add(clientSocket);
 	}
 	
 	/**
@@ -192,10 +212,30 @@ public class GameSession extends Thread {
 	
 	@Override
 	public void run() {
-		//waiting for the required number of players 
-		while(connectedClientSockets.size() < MIN_PLAYERS){ 
-			Thread.yield(); //give way to other threads in the meanwhile 
+		joinGame(hostClientSocket);//add the host to the session
+//		lock.lock(); acquire lock on this specific session object
+		
+		while(connectedClientSockets.size() < MIN_PLAYERS){
+			synchronized (joinGameLock) {
+				if(connectedClientSockets.size()==0){
+					/*
+					 * there must be at least one connected client (usually the host)
+					 * Cancel game session if it is empty  
+					 */
+					return;
+				}
+				else{
+					//wait for join game to signal that there are enough players in the session
+					try {
+						joinGameLock.wait();
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} 
+				}
+			}
 		}
+		
 		startGame(); //players are ready, now the start game
 		System.out.println("GAME OVER");
 		printResult();//print game results
@@ -245,7 +285,7 @@ class ClientListener extends Thread{
 		
 		try {
 			//wait for answer from client
-			answer = inFromClient.readLine();
+			answer = inFromClient.readLine(); //blocking read
 			if(answer == null){
 				return false; //the client has been disconnected. Kill this thread 
 			}
