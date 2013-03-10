@@ -99,7 +99,7 @@ public class ServerWorker extends Thread{
 	       GameSession session = new GameSession(clientSocket,mainServer);
 	       
 	       //add <gameID,session> pair to the server's gameSessionMap
-	       mainServer.addToMap(session.getGameID(), session);
+	       mainServer.addToMap(session.getSessionID(), session);
 	       
 	       session.start();//start the game thread
 //	       session.joinGame(clientSocket);//add itself to the session

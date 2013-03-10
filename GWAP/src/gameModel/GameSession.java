@@ -35,7 +35,7 @@ public class GameSession extends Thread {
 	private ServerSocket sessionSocket;  //game session socket
 	private Server gameServer;
 	private Vector<Socket> connectedClientSockets;
-	private int gameID;
+	private int sessionID;
 	private static final int MIN_PLAYERS = 2; //minimum number of players per game
 	private int timeOut; //question timeout in minute
 	private ArrayList<ClientListener> clientListeners;
@@ -58,15 +58,15 @@ public class GameSession extends Thread {
 		timeOut = 5500; //in milliseconds
 		try{
 			sessionSocket = new ServerSocket(0);//create a session socket with any available port
-			gameID = sessionSocket.getLocalPort(); //gameID is the port local port number of the session
+			sessionID = sessionSocket.getLocalPort(); //gameID is the port local port number of the session
 		}catch(IOException e){
 			System.out.println("problem creating session socket!");
 		}
 		setName("GameSession");
 	}
 	
-	public Integer getGameID(){
-		return gameID;
+	public Integer getSessionID(){
+		return sessionID;
 	}
 	
 	/**
@@ -165,10 +165,8 @@ public class GameSession extends Thread {
 			}
 		}
 		
-		  
-		
 		//signal the client that they have joined the gameSession
-		String message = String.format("@joinAck %d", this.gameID);
+		String message = String.format("@joinAck %d", this.sessionID);
 		sendMsgToSocket(message, clientSocket);
 		
 	}
@@ -197,7 +195,7 @@ public class GameSession extends Thread {
 	public void endSession(){
 		try{
 			//remove this session from the server's list of sessions
-			gameServer.removeSession(this);  				
+			gameServer.removeSession(this.sessionID);  				
 			broadCastMessage("@quitGame"); //remove all clients from the session
 			sessionSocket.close();
 		} catch (IOException e) {
@@ -216,7 +214,6 @@ public class GameSession extends Thread {
 	@Override
 	public void run() {
 		joinGame(hostClientSocket);//add the host to the session
-//		lock.lock(); acquire lock on this specific session object
 		
 		while(connectedClientSockets.size() < MIN_PLAYERS){
 			synchronized (joinGameLock) {

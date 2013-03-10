@@ -136,8 +136,8 @@ public class Server {
 	}
 
 
-	public void removeSession(GameSession gameSession) {
-		sessionMap.remove(gameSession);
+	public void removeSession(Integer sessionID) {
+		sessionMap.remove(sessionID);
 	}
 	
 	public static void main( String args[] )
