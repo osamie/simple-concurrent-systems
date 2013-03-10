@@ -156,13 +156,16 @@ public class GameSession extends Thread {
 			//add socket to collection of connected clientSockets
 			connectedClientSockets.add(clientSocket);
 			
+			//start the clientListener thread to listen for game inputs
+			listener.start(); 
+			
 			if(connectedClientSockets.size()==MIN_PLAYERS){
 				//Session is ready to be started. Wake up the session thread to start game.  
 				joinGameLock.notifyAll();
 			}
 		}
 		
-		listener.start(); //start the clientListener thread to listen for game inputs  
+		  
 		
 		//signal the client that they have joined the gameSession
 		String message = String.format("@joinAck %d", this.gameID);
