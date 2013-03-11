@@ -13,6 +13,7 @@ package gameServer;
 
 import gameModel.GameSession;
 import gameModel.ServerWorkerPool;
+import gameModel.SessionPool;
 
 import java.io.*;
 import java.net.*;
@@ -35,7 +36,25 @@ public class Server {
    
    ConcurrentHashMap<Integer,GameSession> sessionMap;
    ServerWorkerPool workerPool;
+   SessionPool sessionPool;
    
+   /*
+    * NUM_OF_SESSIONS is the maximum number of game sessions  
+    * at a time. 
+    */
+   public static final int NUM_OF_SESSIONS = 10;
+   
+  /*
+   * NUM_OF_WORKERS is the maximum number of serverWorkers (i.e maximum number 
+   * of clients you can have in the menu stage at a time.) 
+   */
+   public static final int NUM_OF_WORKERS = 10;
+   
+ //message queue for server - serverWorker communication
+   private final ArrayBlockingQueue<Socket> newClientsQueue;
+   
+   //message queue for serverWorker - sessionPool communication
+ 	private final ArrayBlockingQueue<Socket> gameHostQueue;
    
    //read-only word list
    private final static String [] dictionary = 
@@ -47,6 +66,11 @@ public class Server {
    public Server(int portNum)
    { 
 	   sessionMap = new ConcurrentHashMap<Integer,GameSession>();
+	   
+	   newClientsQueue = new ArrayBlockingQueue<Socket>(NUM_OF_WORKERS,true);
+	   gameHostQueue = new ArrayBlockingQueue<Socket>(NUM_OF_SESSIONS,true);
+	   
+	   
        try {
     	   //listen for new gameSession hosts
            serverSocket = new ServerSocket(portNum);
@@ -55,12 +79,52 @@ public class Server {
            System.exit(1);
        }
        
-       /*
-	    nWorkers is the maximum number of serverWorkers (i.e maximum number of clients you can have 
-	   	in the menu stage at a time.)
-	   */
-	   int nWorkers = 5;
-       workerPool = new ServerWorkerPool(this,nWorkers);   
+       workerPool = new ServerWorkerPool(this,NUM_OF_WORKERS); 
+       sessionPool = new SessionPool(this,NUM_OF_SESSIONS);
+   }
+   
+   /**
+    * 
+    * @return
+    */
+   public Socket takeNewClient(){
+	   Socket socket = null;
+	   try {
+		socket = newClientsQueue.take();
+	   } catch (InterruptedException e) {
+		   // TODO Auto-generated catch block
+		   e.printStackTrace();
+	   }
+	   return socket;
+   }
+   
+   public Socket takeNewGameHostClient(){
+	   Socket socket = null;
+	   try {
+		socket = gameHostQueue.take();
+	   } catch (InterruptedException e) {
+		   // TODO Auto-generated catch block
+		   e.printStackTrace();
+	   }
+	   return socket;
+   }
+   
+   public void putNewClient(Socket socket){
+	   try {
+		newClientsQueue.put(socket);
+	   } catch (InterruptedException e) {
+		   // TODO Auto-generated catch block
+		   e.printStackTrace();
+	   }
+   }
+   
+   public void putNewGameHostClient(Socket socket){
+	   try {
+		   gameHostQueue.put(socket);
+	   } catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+	   }
    }
    
    /**
@@ -106,8 +170,8 @@ public class Server {
 			  //wait for an initial connection from host client 
 			   clientSocket = serverSocket.accept();
 			   
-			  //passes the client to the worker pool 
-			  workerPool.addNewClient(clientSocket);
+			  //puts the client socket in the newClient message queue 
+			  putNewClient(clientSocket);
 		   }
 	   
 	   } catch (SocketException e2) { System.out.println("Done"); System.exit(0); }

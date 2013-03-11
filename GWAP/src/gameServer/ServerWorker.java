@@ -15,6 +15,8 @@
 package gameServer;
 
 import gameModel.GameSession;
+import gameModel.SessionPool;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -28,11 +30,12 @@ public class ServerWorker extends Thread{
 	PrintWriter out;
 	BufferedReader in;
 	Server mainServer;
-	private ArrayBlockingQueue<Socket> newClientsQueue;
+//	private ArrayBlockingQueue<Socket> newClientsQueue;
+	private SessionPool sessionPool;
 	
-	public ServerWorker(Server parentServer,ArrayBlockingQueue<Socket> newClientsQueue) {
+	public ServerWorker(Server parentServer) {
 		mainServer = parentServer;
-		this.newClientsQueue = newClientsQueue; 
+//		this.newClientsQueue = newClientsQueue; 
 		if(mainServer == null){System.out.println("mainServer is null!!");}
 		
 		this.setName("ServerWorker");
@@ -66,16 +69,10 @@ public class ServerWorker extends Thread{
 	
 	@Override
 	public void run() {
-		 
 		while(true){
-			//keep checking the message queue for a client socket 
-			try {
-				Socket socket = newClientsQueue.take(); //take from head
-				doWork(socket);
-			} catch (InterruptedException e) {
-				//waiting for the queue has been interrupted
-				e.printStackTrace();
-			}
+			//keep checking the message queue for a client socket
+			Socket socket = mainServer.takeNewClient(); //take from head
+			doWork(socket);
 		}
 	}
 
@@ -121,17 +118,9 @@ public class ServerWorker extends Thread{
 			//TODO determine a game session or let the user decide via the message 
 		}
 		else if(messageParam[0].contains("@host")){
-			
-			//create a new gameSession with the generated gameID
-	       GameSession session = new GameSession(clientSocket,mainServer);
-	       
-	       //add <gameID,session> pair to the server's gameSessionMap
-	       mainServer.addToMap(session.getSessionID(), session);
-	       
-	       session.start();//start the game thread
-//	       session.joinGame(clientSocket);//add itself to the session
-	       
-	       return false;
+			//pass the socket to the serverWorker pool via the newClients message queue
+			mainServer.putNewGameHostClient(clientSocket);
+			return false;
 		}
 		
 		else if(messageParam[0].contains("@list")){

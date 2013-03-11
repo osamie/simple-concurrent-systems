@@ -39,8 +39,8 @@ public class Client {
     */
    public Client(int port)
    {
-	   init(port);  
 	   System.out.print("\n CONNECTING TO SERVER...");
+	   init(port);  
 	   listenToServer();
    }
    
@@ -84,7 +84,7 @@ public class Client {
     * the server. 
     */
    public void start(){   
-	   System.out.print("DONE\n"); //done connecting to server
+	   System.out.print("DONEY\n"); //done connecting to server
 	   System.out.println("\t********************************\n" +
 			   "\t\tGWAP Client\n"+
 	       	"\t********************************");

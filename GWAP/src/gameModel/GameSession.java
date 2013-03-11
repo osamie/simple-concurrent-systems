@@ -24,6 +24,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Vector;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -43,16 +44,17 @@ public class GameSession extends Thread {
 	final Lock joinGameLock = new ReentrantLock();
 	
 	final Condition enoughPlayers  = joinGameLock.newCondition();
-	private Socket hostClientSocket;
+//	private Socket hostClientSocket;
+//	private ArrayBlockingQueue<Socket> gameHostQueue;
 	
 	PrintWriter outToClient;
 	Vector<String> currentQuestion;
 	HashMap<String,Vector<String>> resultsMap;
 	
-	
-	public GameSession(Socket hostClientSocket, Server server){
+	public GameSession(Server server){
 		gameServer = server;
-		this.hostClientSocket = hostClientSocket;
+//		this.gameHostQueue = gameHostQueue;
+//		this.hostClientSocket = hostClientSocket;
 		connectedClientSockets = new Vector<Socket>(MIN_PLAYERS);
 		clientListeners = new ArrayList<ClientListener>(MIN_PLAYERS); 
 		timeOut = 5500; //in milliseconds
@@ -193,16 +195,9 @@ public class GameSession extends Thread {
 	 * Remove this game session from list of active sessions on the main server
 	 */
 	public void endSession(){
-		try{
-			//remove this session from the server's list of sessions
-			gameServer.removeSession(this.sessionID);  				
-			broadCastMessage("@quitGame"); //remove all clients from the session
-			sessionSocket.close();
-		} catch (IOException e) {
-//			System.err.println(String.format("Could not close gameSession on port %i",sessionSocket.getLocalPort()));
-			e.printStackTrace();
-			System.exit(-1);
-		}
+		//remove this session from the server's list of sessions
+		gameServer.removeSession(this.sessionID);  				
+		broadCastMessage("@quitGame"); //remove all clients from the session
 	}
 	
 	
@@ -211,9 +206,16 @@ public class GameSession extends Thread {
 		endSession();
 	}
 	
-	@Override
-	public void run() {
-		joinGame(hostClientSocket);//add the host to the session
+	
+	/**
+	 * This method will only be called when starting a game session 
+	 * @param socket : the socket of the game's host 
+	 */
+	public void doWork(Socket socket) {
+		//add this session to the server's list of active sessions
+		gameServer.addToMap(sessionID, this);
+		
+		joinGame(socket);//add the host to the session
 		
 		while(connectedClientSockets.size() < MIN_PLAYERS){
 			synchronized (joinGameLock) {
@@ -240,6 +242,19 @@ public class GameSession extends Thread {
 		System.out.println("GAME OVER");
 		printResult();//print game results
 		endSession();
+	}
+	
+	
+	
+	@Override
+	public void run() {
+		
+		while(true){
+			//keep checking the message queue for new host client socket
+			Socket socket = gameServer.takeNewGameHostClient(); //will wait on queue if empty
+			doWork(socket); 
+		}
+		
 	}
 }
 
