@@ -45,7 +45,7 @@ public class GameSession extends Thread {
 	
 	final Condition enoughPlayers  = joinGameLock.newCondition();
 //	private Socket hostClientSocket;
-//	private ArrayBlockingQueue<Socket> gameHostQueue;
+//	private ArrayBlockingQueue<Socke=t> gameHostQueue;
 	
 	PrintWriter outToClient;
 	Vector<String> currentQuestion;
@@ -198,6 +198,7 @@ public class GameSession extends Thread {
 		//remove this session from the server's list of sessions
 		gameServer.removeSession(this.sessionID);  				
 		broadCastMessage("@quitGame"); //remove all clients from the session
+		connectedClientSockets.clear();
 	}
 	
 	
