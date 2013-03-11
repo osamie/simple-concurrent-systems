@@ -36,7 +36,7 @@ public class GameSession extends Thread {
 	private Server gameServer;
 	private Vector<Socket> connectedClientSockets;
 	private int sessionID;
-	private static final int MIN_PLAYERS = 2; //minimum number of players per game
+	private static final int MIN_PLAYERS = 5; //minimum number of players per game
 	private int timeOut; //question timeout in minute
 	private ArrayList<ClientListener> clientListeners;
 	final Lock lock = new ReentrantLock();

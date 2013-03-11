@@ -12,12 +12,18 @@
 package gameServer;
 
 import gameModel.GameSession;
+import gameModel.ServerWorkerPool;
+
 import java.io.*;
 import java.net.*;
 import java.util.concurrent.*;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Queue;
 import java.util.Random;
 
 
@@ -28,6 +34,8 @@ public class Server {
    BufferedReader in;
    
    ConcurrentHashMap<Integer,GameSession> sessionMap;
+   ServerWorkerPool workerPool;
+   
    
    //read-only word list
    private final static String [] dictionary = 
@@ -37,7 +45,7 @@ public class Server {
 	   "juvenile","factual","fast"}; 
    
    public Server(int portNum)
-   {
+   { 
 	   sessionMap = new ConcurrentHashMap<Integer,GameSession>();
        try {
     	   //listen for new gameSession hosts
@@ -46,8 +54,14 @@ public class Server {
            e.printStackTrace(System.err);
            System.exit(1);
        }
+       
+       /*
+	    nWorkers is the maximum number of serverWorkers (i.e maximum number of clients you can have 
+	   	in the menu stage at a time.)
+	   */
+	   int nWorkers = 5;
+       workerPool = new ServerWorkerPool(this,nWorkers);   
    }
-   
    
    /**
     * Iterates through the map of game sessions and returns a string
@@ -91,7 +105,9 @@ public class Server {
 		   while (true){
 			  //wait for an initial connection from host client 
 			   clientSocket = serverSocket.accept();
-			   new ServerWorker(clientSocket,this).start();  
+			   
+			  //passes the client to the worker pool 
+			  workerPool.addNewClient(clientSocket);
 		   }
 	   
 	   } catch (SocketException e2) { System.out.println("Done"); System.exit(0); }

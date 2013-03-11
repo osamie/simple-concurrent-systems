@@ -1,11 +1,13 @@
 /**
  * ServerWorker.java
  * 
- * This is a worker thread from the Server. It is spawned for each and every 
- * newly connected client to the server.It is responsible for handling the
+ * This is a pre-threaded worker thread from the Server. It is created as a member 
+ * of the ServerWorkerPool. It is responsible for handling the
  * client's request prior to a client hosting or joining a game     
- * However, this thread will be killed once a client has decided to join or
- * host a game. 
+ * However, after a client has decided to join or host a game, this thread becomes 
+ * of no use to the client and so waits for or immediately grab any available sockets
+ * to handle. Rather than always creating new ServerWorker threads for every connecting 
+ * client, this mechanism promotes re usability of threads.    
  *
  * @author Osazuwa Omigie
  */
@@ -19,37 +21,62 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.concurrent.ArrayBlockingQueue;
 
 public class ServerWorker extends Thread{
 	Socket clientSocket;
 	PrintWriter out;
 	BufferedReader in;
 	Server mainServer;
+	private ArrayBlockingQueue<Socket> newClientsQueue;
 	
-	public ServerWorker(Socket socket,Server parentServer) {
-		clientSocket = socket;
+	public ServerWorker(Server parentServer,ArrayBlockingQueue<Socket> newClientsQueue) {
 		mainServer = parentServer;
+		this.newClientsQueue = newClientsQueue; 
 		if(mainServer == null){System.out.println("mainServer is null!!");}
-		try {
-			out = new PrintWriter(clientSocket.getOutputStream(),true);
-			in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));			
-		}catch (SocketException e2) { System.out.println("Done"); System.exit(0); }
-		catch (IOException e) { e.printStackTrace(System.err); System.exit(1);  }
+		
 		this.setName("ServerWorker");
 	}
 	
-	@Override
-	public void run() {
+	/**
+	 * handles request for the new client
+	 * @param socket
+	 */
+	private void doWork(Socket socket){
+		clientSocket = socket;
+		try {
+			out = new PrintWriter(clientSocket.getOutputStream(),true);
+			in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));			
+		}catch (SocketException e2) { e2.printStackTrace(System.err); System.exit(0); }
+		catch (IOException e) { e.printStackTrace(System.err); System.exit(1);  }
+		
+		//send connection ack to client
+		out.println("@CONNECTED#");
+		
 		try {
 			   boolean optionsStage = true; 
 			   while ((optionsStage)&&(clientSocket.isConnected())){
 			       String message = in.readLine();
 			       optionsStage = processClientInput(message);
 			   }
-  
-		   } catch (SocketException e2) { System.out.println("Done"); System.exit(0); }
-		   catch (IOException e) { e.printStackTrace(System.err); System.exit(1);  }
-//		System.out.println("Server worker dead!");
+
+		 } catch (SocketException e2) { System.out.println("Done"); System.exit(0); }
+		 catch (IOException e) { e.printStackTrace(System.err); System.exit(1);  }
+	}
+	
+	@Override
+	public void run() {
+		 
+		while(true){
+			//keep checking the message queue for a client socket 
+			try {
+				Socket socket = newClientsQueue.take(); //take from head
+				doWork(socket);
+			} catch (InterruptedException e) {
+				//waiting for the queue has been interrupted
+				e.printStackTrace();
+			}
+		}
 	}
 
 	/**

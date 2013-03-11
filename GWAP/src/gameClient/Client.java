@@ -39,8 +39,9 @@ public class Client {
     */
    public Client(int port)
    {
-	   init(port);   
-	   start();
+	   init(port);  
+	   System.out.print("\n CONNECTING TO SERVER...");
+	   listenToServer();
    }
    
    private void init(int port){
@@ -77,14 +78,19 @@ public class Client {
 	   }	   
    }
    
+   /**
+    * 
+    * This method is called only after the client has successfully connected to
+    * the server. 
+    */
    public void start(){   
+	   System.out.print("DONE\n"); //done connecting to server
 	   System.out.println("\t********************************\n" +
 			   "\t\tGWAP Client\n"+
 	       	"\t********************************");
 	   help();
 	   consoleListener = new InputConsoleListener(this);
 	   consoleListener.start();
-	   listenToServer();
    }
    
    /**
@@ -113,7 +119,11 @@ public class Client {
    private boolean processServerMsg(String serverMessage) {
 	   if (serverMessage == null) return false;
 	   
-	   if(serverMessage.contains("@joinAck")){
+	   if(serverMessage.contains("@CONNECTED#")){
+		   start();
+		   return false;
+	   }
+	   else if(serverMessage.contains("@joinAck")){
 		   mode = WAITING; 
 		   String [] params = serverMessage.split(" ");
 		   
