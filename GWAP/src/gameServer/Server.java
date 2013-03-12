@@ -11,6 +11,7 @@
 
 package gameServer;
 
+import gameModel.BufferManager;
 import gameModel.GameSession;
 import gameModel.ServerWorkerPool;
 import gameModel.SessionPool;
@@ -22,6 +23,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
@@ -30,13 +32,14 @@ import java.util.Random;
 
 public class Server {
    private ServerSocket serverSocket;   
-   Socket clientSocket;
-   PrintWriter out;
-   BufferedReader in;
-   
-   ConcurrentHashMap<Integer,GameSession> sessionMap;
-   ServerWorkerPool workerPool;
-   SessionPool sessionPool;
+   private Socket clientSocket;
+//   private PrintWriter out;
+//   private BufferedReader in;
+   private ConcurrentHashMap<Integer,GameSession> sessionMap;
+   private ServerWorkerPool workerPool;
+   private SessionPool sessionPool;
+   private BufferManager bufferManager;
+   private LinkedList<String []> wordsDB;
    
    /*
     * NUM_OF_SESSIONS is the maximum number of game sessions  
@@ -79,8 +82,24 @@ public class Server {
            System.exit(1);
        }
        
+       bufferManager = new BufferManager();
        workerPool = new ServerWorkerPool(this,NUM_OF_WORKERS); 
        sessionPool = new SessionPool(this,NUM_OF_SESSIONS);
+       
+   }
+   
+   /**
+    * Add a new word to the database of words  
+    * @param data
+    */
+   public void addResultData(String [] data){
+	   synchronized (wordsDB) {
+		   wordsDB.add(data);
+	   }
+   }
+   
+   public BufferManager getBufferManager(){
+	   return this.bufferManager;
    }
    
    /**

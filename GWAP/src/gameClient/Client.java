@@ -84,7 +84,7 @@ public class Client {
     * the server. 
     */
    public void start(){   
-	   System.out.print("DONEY\n"); //done connecting to server
+	   System.out.print("DONE\n"); //done connecting to server
 	   System.out.println("\t********************************\n" +
 			   "\t\tGWAP Client\n"+
 	       	"\t********************************");
@@ -190,6 +190,7 @@ public class Client {
    
    @Override
 	protected void finalize() throws Throwable {
+	   System.out.println("test!");
 		in.close();
 		streamSocket.close();
 	}

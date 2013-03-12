@@ -23,11 +23,16 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Stack;
 import java.util.Vector;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import javax.xml.bind.Marshaller.Listener;
+
+import com.sun.xml.internal.bind.v2.runtime.reflect.Lister;
 
 import gameServer.Server;
 
@@ -37,15 +42,14 @@ public class GameSession extends Thread {
 	private Server gameServer;
 	private Vector<Socket> connectedClientSockets;
 	private int sessionID;
-	private static final int MIN_PLAYERS = 5; //minimum number of players per game
+	public static final int MIN_PLAYERS = 2; //minimum number of players per game
 	private int timeOut; //question timeout in minute
 	private ArrayList<ClientListener> clientListeners;
-	final Lock lock = new ReentrantLock();
-	final Lock joinGameLock = new ReentrantLock();
+	private final Lock lock = new ReentrantLock();
+	private final Lock joinGameLock = new ReentrantLock();
+	private final Condition enoughPlayers  = joinGameLock.newCondition();
 	
-	final Condition enoughPlayers  = joinGameLock.newCondition();
-//	private Socket hostClientSocket;
-//	private ArrayBlockingQueue<Socke=t> gameHostQueue;
+	private BufferManager bufferManager;
 	
 	PrintWriter outToClient;
 	Vector<String> currentQuestion;
@@ -53,6 +57,8 @@ public class GameSession extends Thread {
 	
 	public GameSession(Server server){
 		gameServer = server;
+		bufferManager = gameServer.getBufferManager();
+		
 //		this.gameHostQueue = gameHostQueue;
 //		this.hostClientSocket = hostClientSocket;
 		connectedClientSockets = new Vector<Socket>(MIN_PLAYERS);
@@ -90,31 +96,33 @@ public class GameSession extends Thread {
 	
 	/**
 	 * Contains the main game logic.
-	 * Once this method is called, no more clients can be added to the session 
+	 * Once this method is called, no more clients can be added to the session
+	 * @param rounds - the number of times players are sent a challenge/word
+	 * @return the results of the game 
 	 */
-	public void startGame(){
+	public Vector<String[]> startGame(int rounds){
 		System.out.println("Game started!");
 		
 		//signal all connected clients that game has started
 		broadCastMessage("@startGame"); 
 		
-		//initialize the results map
-		resultsMap = new HashMap<String, Vector<String>>(connectedClientSockets.size());
+		//initialize the game data results
+		Vector<String[]> resultsData = new Vector<String[]>();
 		
 		/*
 		 * the number of word challenges/rounds
 		 * TODO: this could be defined by the game host 
 		 */
-		int count = 3;
-		while(count > 0){
+		while(rounds > 0){
 			String word = gameServer.getAword();
+
 			//get a random word (results does not contain)
-			while (resultsMap.get(word) != null){
-				//TODO this could loop forever 
-				word = gameServer.getAword();
-			}
+			word = gameServer.getAword(); //TODO reduce chances of repeated words per game
 			
-			Vector<String> results = new Vector<String>(connectedClientSockets.size());
+			//the first string in the round result is the received word from teh server
+			String [] results = new String [clientListeners.size()+1];
+			results[0] = word; 
+			
 			broadCastMessage(word);
 			
 			try {
@@ -123,23 +131,18 @@ public class GameSession extends Thread {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			//After timer
-			//iterate through listeners collection and store answers in resultsMap
-			for(ClientListener listener: clientListeners){
-				results.add(listener.getAnswer()); //populate the collection of answers from all clients
+			
+			/*Iterate through listeners collection and store answers in resultsMap*/
+			for(int i=0;i<clientListeners.size();i++){
+				results[i+1] = clientListeners.get(i).getAnswer(); //populate the collection of answers from all clients
 			}
 			
-			//store result in resultsMap
-			resultsMap.put(word, results);
-			count--;
+			//store result data
+			resultsData.add(results);
+			
+			rounds--;
 		}
-	}
-	
-	/**
-	 * Prints the results of the game
-	 */
-	private void printResult() {
-		System.out.println(resultsMap.toString());
+		return resultsData;
 	}
 
 
@@ -239,9 +242,15 @@ public class GameSession extends Thread {
 			}
 		}
 		
-		startGame(); //players are ready, now the start game
+		//players are ready, now the start game;
+		Vector<String []>  gameResults = startGame(2); 
 		System.out.println("GAME OVER");
-		printResult();//print game results
+			
+		for(String [] result : gameResults){
+			bufferManager.putFullBuffer(result); //store the results in the word DB
+			System.out.println("Results: " + result.toString()); //print results
+		}
+		
 		endSession();
 	}
 	
