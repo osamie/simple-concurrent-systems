@@ -20,8 +20,6 @@ public class Merger extends Thread {
 			
 			String [] newBuffer = new String [fullBuffer.length];
 			
-//			System.arraycopy(fullBuffer, 0, newBuffer, 0, fullBuffer.length);
-			
 			//refresh/consume fullBuffer
 			for(int i=0;i<fullBuffer.length;i++){
 				/*Read and destroy*/
@@ -31,11 +29,11 @@ public class Merger extends Thread {
 			
 			//store the collected data in the words database
 			mainServer.addResultData(newBuffer);
-			System.out.println("new buffer");
-			for(int i=0;i<newBuffer.length;i++){
-				System.out.print(newBuffer[i] + ",");
-			}
-			System.out.println("\n");
+//			System.out.println("new buffer");
+//			for(int i=0;i<newBuffer.length;i++){
+//				System.out.print(newBuffer[i] + ",");
+//			}
+//			System.out.println("\n");
 			
 			
 			//put back the emptied buffer
