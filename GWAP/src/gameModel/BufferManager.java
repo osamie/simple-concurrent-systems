@@ -48,7 +48,7 @@ public class BufferManager {
 	public String[] getFullBuffer(){
 		String [] fullBuffer = null;
 		try {
-			fullBuffer = fullBuffers.take(); //synchronized take
+			fullBuffer = fullBuffers.take(); //blocking take
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -82,7 +82,7 @@ public class BufferManager {
 	 */
 	public boolean putEmptyBuffer(String [] emptiedBuffer){
 		try {
-			fullBuffers.put(emptiedBuffer); //block put
+			emptyBuffers.put(emptiedBuffer); //block put
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 			return false;

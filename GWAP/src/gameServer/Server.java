@@ -13,6 +13,7 @@ package gameServer;
 
 import gameModel.BufferManager;
 import gameModel.GameSession;
+import gameModel.Merger;
 import gameModel.ServerWorkerPool;
 import gameModel.SessionPool;
 
@@ -33,8 +34,6 @@ import java.util.Random;
 public class Server {
    private ServerSocket serverSocket;   
    private Socket clientSocket;
-//   private PrintWriter out;
-//   private BufferedReader in;
    private ConcurrentHashMap<Integer,GameSession> sessionMap;
    private ServerWorkerPool workerPool;
    private SessionPool sessionPool;
@@ -72,6 +71,7 @@ public class Server {
 	   
 	   newClientsQueue = new ArrayBlockingQueue<Socket>(NUM_OF_WORKERS,true);
 	   gameHostQueue = new ArrayBlockingQueue<Socket>(NUM_OF_SESSIONS,true);
+	   wordsDB = new LinkedList<String[]>();
 	   
 	   
        try {
@@ -85,6 +85,7 @@ public class Server {
        bufferManager = new BufferManager();
        workerPool = new ServerWorkerPool(this,NUM_OF_WORKERS); 
        sessionPool = new SessionPool(this,NUM_OF_SESSIONS);
+       new Merger(this).start(); //start the merger
        
    }
    

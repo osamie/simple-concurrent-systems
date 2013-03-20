@@ -45,9 +45,9 @@ public class GameSession extends Thread {
 	public static final int MIN_PLAYERS = 2; //minimum number of players per game
 	private int timeOut; //question timeout in minute
 	private ArrayList<ClientListener> clientListeners;
-	private final Lock lock = new ReentrantLock();
+//	private final Lock lock = new ReentrantLock();
 	private final Lock joinGameLock = new ReentrantLock();
-	private final Condition enoughPlayers  = joinGameLock.newCondition();
+//	private final Condition enoughPlayers  = joinGameLock.newCondition();
 	
 	private BufferManager bufferManager;
 	
@@ -244,11 +244,14 @@ public class GameSession extends Thread {
 		
 		//players are ready, now the start game;
 		Vector<String []>  gameResults = startGame(2); 
-		System.out.println("GAME OVER");
+		System.out.println("GAME OVER\n");
 			
 		for(String [] result : gameResults){
 			bufferManager.putFullBuffer(result); //store the results in the word DB
-			System.out.println("Results: " + result.toString()); //print results
+//			for(int i=0;i<result.length;i++){
+//				System.out.print(result[i] + ",");
+//			}
+//			System.out.println("\n");
 		}
 		
 		endSession();
